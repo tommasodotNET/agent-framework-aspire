@@ -1,6 +1,6 @@
-# Agent Framework RAG Template
+# Agent Framework Aspire
 
-This repository represents a template for building Retrieval-Augmented Generation (RAG) applications using an agent framework. It provides a structured approach to integrate various components such as document loaders, vector stores, language models, and agents to create intelligent systems capable of answering questions based on external knowledge sources.
+This repository contains a sample implementation of an agent framework using Aspire, demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
 
 ## Run the sample
 
