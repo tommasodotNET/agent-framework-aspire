@@ -40,6 +40,13 @@ var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
     .WithOtlpExporter()
     .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true");
 
+var dotnetGroupChat = builder.AddProject<Projects.GroupChat_Dotnet>("dotnetgroupchat")
+    .WithHttpHealthCheck("/health")
+    .WithReference(azureOpenAI)
+    .WithEnvironment("TenantId", tenantId)
+    .WithEnvironment("AgentUrls", $"{dotnetAgent.GetEndpoint("https")}")
+    .WaitFor(azureOpenAI);
+
 var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithNpmPackageInstallation()
     .WithReference(dotnetAgent)
