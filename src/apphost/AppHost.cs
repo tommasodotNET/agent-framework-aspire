@@ -35,7 +35,7 @@ var dotnetAgent = builder.AddProject<Projects.Agents_Dotnet>("dotnetagent")
 #pragma warning disable ASPIREHOSTINGPYTHON001
 var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
     .WithHttpEndpoint(env: "PORT")
-    .WithEnvironment("AZURE_OPENAI_ENDPOINT", "https://tstocchi-foundry.openai.azure.com/")
+    .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingOpenAIName}.openai.azure.com/")
     .WithEnvironment("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", "gpt-4.1")
     .WithOtlpExporter()
     .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true");
