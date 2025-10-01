@@ -1,0 +1,35 @@
+[project]
+name = "agents-python"
+version = "0.1.0"
+description = "Python-based agent for financial analysis, reporting, and business metrics"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.5.0",
+    "pandas>=2.1.0",
+    "numpy>=1.24.0",
+    "opentelemetry-api>=1.33.0",
+    "opentelemetry-exporter-otlp-proto-grpc>=1.33.0",
+    "opentelemetry-instrumentation-fastapi>=0.54b0",
+    "opentelemetry-sdk>=1.33.0",
+    "grpcio>=1.50.0",
+    # Microsoft Agent Framework dependencies
+    "agent-framework",
+    "agent-framework-azure"
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=7.4.0",
+    "httpx>=0.25.0",
+]
+prerelease = "allow"
+
+[project.scripts]
+start = "agents_python.main:main"

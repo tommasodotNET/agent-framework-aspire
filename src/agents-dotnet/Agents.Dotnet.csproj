@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251001.2" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251001.2" />
+    <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.0.0-preview.251001.2" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting" Version="1.0.0-preview.251001.2" />
+    <PackageReference Include="Microsoft.Agents.AI.Runtime" Version="0.2.0-250929-preview.250929" />
+    <PackageReference Include="Microsoft.Agents.AI.Runtime.Abstractions" Version="0.2.0-250929-preview.250929" />
+    <PackageReference Include="Aspire.Azure.AI.OpenAI" Version="13.0.0-preview.1.25480.5" />
+    <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" Version="13.0.0-preview.1.25480.5" />
+    <PackageReference Include="Azure.Identity" Version="1.16.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\service-defaults\ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>
