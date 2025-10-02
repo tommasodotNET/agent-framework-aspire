@@ -1,34 +1,35 @@
+using A2A;
 using Azure.Identity;
-using GroupChat.Dotnet;
-using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
-using OpenAI.Chat;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder
-    .AddAzureOpenAIClient("azureOpenAI", configureSettings: settings =>
-    {
-        settings.Credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions() { TenantId = builder.Configuration.GetValue<string>("TenantId") });
-        settings.EnableSensitiveTelemetryData = true;
-    })
+builder.AddAzureChatCompletionsClient(connectionName: "foundry",
+    configureSettings: settings =>
+        {
+            settings.TokenCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions() { TenantId = builder.Configuration.GetValue<string>("TenantId") });
+            settings.EnableSensitiveTelemetryData = true;
+        })
     .AddChatClient("gpt-4.1");
 
 var app = builder.Build();
 
-app.MapGet("/", async (IChatClient chatClient) =>
+app.MapGet("/", async () =>
 {
-    var dotnetAgentUrl = builder.Configuration.GetValue<string>("dotnetagenturl")!;
+    var httpClient = new HttpClient()
+    {
+        BaseAddress = new Uri(Environment.GetEnvironmentVariable("services__dotnetagent__https__0")!),
+        Timeout = TimeSpan.FromSeconds(60)
+    };
+    var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient);
 
-    var dotnetAgent = new HostClientAgent();
-    await dotnetAgent.InitializeAgentAsync(chatClient, dotnetAgentUrl);
+    var agent = await agentCardResolver.GetAIAgentAsync();
 
-    AgentThread thread = dotnetAgent.Agent!.GetNewThread();
-    var response = await dotnetAgent.Agent!.RunAsync("What is the remote work policy?", thread);
-    
-    Console.WriteLine(response);
+    var response = await agent.RunAsync("What is our remote work policy?");
+
+    Console.WriteLine(response.Text);
     return Results.Ok();
 });
 

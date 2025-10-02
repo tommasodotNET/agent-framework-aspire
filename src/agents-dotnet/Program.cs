@@ -15,12 +15,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder
-    .AddAzureOpenAIClient("azureOpenAI", configureSettings: settings =>
-    {
-        settings.Credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions() { TenantId = builder.Configuration.GetValue<string>("TenantId") });
-        settings.EnableSensitiveTelemetryData = true;
-    })
+builder.AddAzureChatCompletionsClient(connectionName: "foundry",
+    configureSettings: settings =>
+        {
+            settings.TokenCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions() { TenantId = builder.Configuration.GetValue<string>("TenantId") });
+            settings.EnableSensitiveTelemetryData = true;
+        })
     .AddChatClient("gpt-4.1");
 
 builder.Services.AddSingleton<DocumentService>();

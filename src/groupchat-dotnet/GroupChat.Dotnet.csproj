@@ -8,10 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="A2A" Version="0.1.0-preview.2" />
+    <PackageReference Include="Aspire.Azure.AI.Inference" Version="13.0.0-preview.1.25502.4" />
     <PackageReference Include="Microsoft.Agents.AI.A2A" Version="1.0.0-preview.251001.3" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251001.3" />
     <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.0.0-preview.251001.3" />
-    <PackageReference Include="Aspire.Azure.AI.OpenAI" Version="13.0.0-preview.1.25480.5" />
   </ItemGroup>
 
   <ItemGroup>
