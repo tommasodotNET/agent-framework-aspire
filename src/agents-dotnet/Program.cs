@@ -2,22 +2,25 @@ using Azure.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
 using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.A2A;
 using Microsoft.Agents.AI.Hosting;
 using Agents.Dotnet.Models.UI;
 using Agents.Dotnet.Services;
 using Agents.Dotnet.Tools;
 using System.Text.Json;
+using A2A.AspNetCore;
+using A2A;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder
-    .AddAzureOpenAIClient("azureOpenAI", configureSettings: settings =>
-    {
-        settings.Credential = new DefaultAzureCredential(new DefaultAzureCredentialOptions() { TenantId = builder.Configuration.GetValue<string>("TenantId") });
-        settings.EnableSensitiveTelemetryData = true;
-    })
+builder.AddAzureChatCompletionsClient(connectionName: "foundry",
+    configureSettings: settings =>
+        {
+            settings.TokenCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions() { TenantId = builder.Configuration.GetValue<string>("TenantId") });
+            settings.EnableSensitiveTelemetryData = true;
+        })
     .AddChatClient("gpt-4.1");
 
 builder.Services.AddSingleton<DocumentService>();
@@ -100,5 +103,50 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management
 });
 
 app.MapDefaultEndpoints();
+
+var agent = app.Services.GetKeyedService<AIAgent>("document-management-agent");
+
+var a2aAgent = new A2AHostAgent(agent!, new AgentCard
+{
+    Name = agent!.Name!,
+    Description = "Document Management and Policy Compliance Assistant",
+    Version = "1.0",
+    DefaultInputModes = ["text"],
+    DefaultOutputModes = ["text"],
+    Capabilities = new AgentCapabilities
+    {
+        Streaming = true,
+        PushNotifications = false
+    },
+    Skills = [
+        new AgentSkill
+        {
+            Name = "Document Search",
+            Description = "Search and retrieve company documents, policies, and procedures",
+            Examples = ["Find the remote work policy", "What is the purchase approval process?", "Show me the latest HR policies"]
+        },
+        new AgentSkill
+        {
+            Name = "Content Extraction",
+            Description = "Extract and analyze content from PDF, Word, and PowerPoint documents",
+            Examples = ["Extract text from this PDF", "Analyze the content of this Word document"]
+        },
+        new AgentSkill
+        {
+            Name = "Compliance Lookup",
+            Description = "Check compliance requirements for various operations and spending levels",
+            Examples = ["What are the compliance requirements for a $10,000 purchase?", "List the safety compliance rules"]
+        },
+        new AgentSkill
+        {
+            Name = "Document Management",
+            Description = "Provide document version information and management",
+            Examples = ["What is the latest version of the employee handbook?", "Manage document versions"]
+        }
+    ]
+
+});
+
+app.MapA2A(a2aAgent.TaskManager!, "/");
 
 app.Run();
