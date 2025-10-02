@@ -2,18 +2,13 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var tenantId = builder.AddParameter("TenantId")
     .WithDescription("The Azure tenant ID for authentication.");
-var existingOpenAIName = builder.AddParameter("existingOpenAIName")
-    .WithDescription("The name of the existing Azure OpenAI resource.");
-var existingOpenAIResourceGroup = builder.AddParameter("existingOpenAIResourceGroup")
-    .WithDescription("The resource group of the existing Azure OpenAI resource.");
-
-// var azureOpenAI = builder.AddAzureOpenAI("azureOpenAI");
-
-// // If you want to use an existing Azure OpenAI resource, uncomment the following line
-// azureOpenAI.AsExisting(existingOpenAIName, existingOpenAIResourceGroup);
+var existingFoundryName = builder.AddParameter("existingFoundryName")
+    .WithDescription("The name of the existing Azure Foundry resource.");
+var existingFoundryResourceGroup = builder.AddParameter("existingFoundryResourceGroup")
+    .WithDescription("The resource group of the existing Azure Foundry resource.");
 
 var foundry = builder.AddAzureAIFoundry("foundry")
-    .AsExisting(existingOpenAIName, existingOpenAIResourceGroup);
+    .AsExisting(existingFoundryName, existingFoundryResourceGroup);
 
 #pragma warning disable ASPIRECOSMOSDB001
 var cosmos = builder.AddAzureCosmosDB("cosmos-db")
@@ -26,9 +21,7 @@ var cosmos = builder.AddAzureCosmosDB("cosmos-db")
 var db = cosmos.AddCosmosDatabase("db");
 var conversations = db.AddContainer("conversations", "/conversationId");
 
-// var dotnetAgent = builder.AddProject("dotnetagent", "../Agents.Dotnet/Agents.Dotnet.csproj")
-
-var dotnetAgent = builder.AddProject<Projects.Agents_Dotnet>("dotnetagent")
+var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry)
     .WithReference(conversations).WaitFor(conversations)
@@ -38,12 +31,12 @@ var dotnetAgent = builder.AddProject<Projects.Agents_Dotnet>("dotnetagent")
 #pragma warning disable ASPIREHOSTINGPYTHON001
 var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
     .WithHttpEndpoint(env: "PORT")
-    .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingOpenAIName}.openai.azure.com/")
+    .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingFoundryName}.openai.azure.com/")
     .WithEnvironment("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", "gpt-4.1")
     .WithOtlpExporter()
     .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true");
 
-var dotnetGroupChat = builder.AddProject<Projects.GroupChat_Dotnet>("dotnetgroupchat")
+var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry)
     .WithEnvironment("TenantId", tenantId)

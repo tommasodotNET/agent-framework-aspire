@@ -74,7 +74,6 @@ app.MapGet("/test-a2a-agent", async ([FromKeyedServices("document-management-age
     var documentResponse = await documentAgent.RunAsync("What is our remote work policy?");
     Console.WriteLine($"Document Agent: {documentResponse.Text}");
 
-
     return Results.Ok(new { DocumentAgent = documentResponse.Text });
 });
 
