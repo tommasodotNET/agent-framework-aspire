@@ -49,7 +49,13 @@ var dotnetGroupChat = builder.AddProject<Projects.GroupChat_Dotnet>("dotnetgroup
     .WithEnvironment("TenantId", tenantId)
     .WithReference(dotnetAgent)
     .WithEnvironment("dotnetagenturl", $"{dotnetAgent.GetEndpoint("https")}")
-    .WaitFor(foundry);
+    .WaitFor(foundry)
+    .WithUrls((e) =>
+    {
+        e.Urls.Clear();
+        e.Urls.Add(new() { Url = "/test-a2a-agent", DisplayText = "💬A2A Agent", Endpoint = e.GetEndpoint("https") });
+        e.Urls.Add(new() { Url = "/agent/chat", DisplayText = "💬Group Chat", Endpoint = e.GetEndpoint("https") });
+    });
 
 var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithNpmPackageInstallation()
