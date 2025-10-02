@@ -57,7 +57,7 @@ Sample Questions:
 
 ## Python Agent
 
-Is a Python-based agent hosted in a uv application (not uvicorn!). Please note uv is supported by Aspire in the Community Toolkit (https://learn.microsoft.com/en-us/dotnet/aspire/community-toolkit/hosting-python-extensions?tabs=dotnet-cli%2Cuv).
+Is a Python-based agent hosted in a uv application. Please note uv is supported by Aspire in the [Community Toolkit](https://learn.microsoft.com/en-us/dotnet/aspire/community-toolkit/hosting-python-extensions?tabs=dotnet-cli%2Cuv).
 
 Role: Financial analysis, reporting, and business metrics Local Tools (methods returning mocked data):
 
