@@ -44,7 +44,7 @@ var dotnetGroupChat = builder.AddProject<Projects.GroupChat_Dotnet>("dotnetgroup
     .WithHttpHealthCheck("/health")
     .WithReference(azureOpenAI)
     .WithEnvironment("TenantId", tenantId)
-    .WithEnvironment("AgentUrls", $"{dotnetAgent.GetEndpoint("https")}")
+    .WithEnvironment("dotnetagenturl", $"{dotnetAgent.GetEndpoint("https")}")
     .WaitFor(azureOpenAI);
 
 var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")

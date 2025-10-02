@@ -20,11 +20,14 @@ var app = builder.Build();
 
 app.MapGet("/", async (IChatClient chatClient) =>
 {
-    var agentUrls = builder.Configuration.GetValue<string>("AgentUrls");
-    var hostAgent = new HostClientAgent();
-    await hostAgent.InitializeAgentAsync(chatClient, agentUrls!.Split(";"));
-    AgentThread thread = hostAgent.Agent!.GetNewThread();
-    var response = await hostAgent.Agent!.RunAsync("What is the remote work policy?", thread);
+    var dotnetAgentUrl = builder.Configuration.GetValue<string>("dotnetagenturl")!;
+
+    var dotnetAgent = new HostClientAgent();
+    await dotnetAgent.InitializeAgentAsync(chatClient, dotnetAgentUrl);
+
+    AgentThread thread = dotnetAgent.Agent!.GetNewThread();
+    var response = await dotnetAgent.Agent!.RunAsync("What is the remote work policy?", thread);
+    
     Console.WriteLine(response);
     return Results.Ok();
 });
