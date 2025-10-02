@@ -8,12 +8,12 @@ namespace GroupChat.Dotnet;
 
 public class HostClientAgent
 {
-    public async Task InitializeAgentAsync(IChatClient chatClient, string[] agentUrls)
+    public async Task InitializeAgentAsync(IChatClient chatClient, string agentUrl)
     {
         try
         {
             // Connect to the remote agents via A2A
-            var createAgentTasks = agentUrls.Select(CreateAgentAsync);
+            var createAgentTasks = CreateAgentAsync(agentUrl);
             var agents = await Task.WhenAll(createAgentTasks);
             var tools = agents.Select(agent => (AITool)agent.AsAIFunction()).ToList();
 

@@ -20,11 +20,18 @@ var app = builder.Build();
 
 app.MapGet("/", async (IChatClient chatClient) =>
 {
-    var agentUrls = builder.Configuration.GetValue<string>("AgentUrls");
-    var hostAgent = new HostClientAgent();
-    await hostAgent.InitializeAgentAsync(chatClient, agentUrls!.Split(";"));
-    AgentThread thread = hostAgent.Agent!.GetNewThread();
-    var response = await hostAgent.Agent!.RunAsync("What is the remote work policy?", thread);
+    var agentUrls = builder.Configuration.GetValue<string>("AgentUrls")!;
+    var dotnetAgent = new HostClientAgent();
+    var dotnetAgentUrl = agentUrls.Split(';').FirstOrDefault()!;
+    await dotnetAgent.InitializeAgentAsync(chatClient, dotnetAgentUrl);
+    AgentThread thread = dotnetAgent.Agent!.GetNewThread();
+    var response = await dotnetAgent.Agent!.RunAsync("What is the remote work policy?", thread);
+    Console.WriteLine(response);
+    var pythonAgentUrl = agentUrls.Split(';').LastOrDefault()!;
+    var pythonAgent = new HostClientAgent();
+    await pythonAgent.InitializeAgentAsync(chatClient, pythonAgentUrl);
+    thread = pythonAgent.Agent!.GetNewThread();
+    response = await pythonAgent.Agent!.RunAsync("What were our top-performing products last quarter?", thread);
     Console.WriteLine(response);
     return Results.Ok();
 });

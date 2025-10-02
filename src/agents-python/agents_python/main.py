@@ -4,6 +4,7 @@ Main FastAPI application for the Python financial analysis agent using Microsoft
 import os
 import asyncio
 import json
+import uuid
 from typing import AsyncGenerator, Dict, Any, List, Annotated
 from decimal import Decimal
 
@@ -26,6 +27,8 @@ from agent_framework.azure import AzureOpenAIChatClient
 from azure.identity import DefaultAzureCredential
 
 from .models import AIChatRequest, AIChatCompletionDelta, AIChatMessageDelta
+from .a2a_models import AgentCard, AgentSkill, AgentCapabilities
+from .a2a_agent import A2AHostAgent
 from services.financial_service import FinancialService
 from tools.financial_tools import FinancialTools
 from tools import financial_processing_tools
@@ -89,6 +92,101 @@ Always focus on providing actionable business insights based on the available fi
 
 # Initialize the agent
 financial_agent = create_financial_agent()
+
+# Initialize A2A Host Agent
+def create_a2a_agent() -> A2AHostAgent:
+    """Create and configure the A2A Host Agent."""
+    # Create a simplified agent for A2A that doesn't expose complex tools
+    # The A2A agent will handle task execution by delegating to the full financial_agent
+    try:
+        # Create a minimal agent for A2A protocol compliance
+        simple_agent = ChatAgent(
+            chat_client=AzureOpenAIChatClient(api_key=os.environ.get("AZURE_OPENAI_API_KEY")),
+            instructions="""You are a specialized Financial Analysis and Business Intelligence Assistant. Your role is to help users analyze financial data, calculate business metrics, and generate insights for strategic decision-making.""",
+            tools=[]  # No tools to avoid A2A naming pattern issues
+        ) if financial_agent else None
+        
+        if not simple_agent:
+            return None
+    except Exception as e:
+        print(f"Warning: Could not initialize A2A agent: {e}")
+        return None
+    
+    # Get server configuration
+    port = int(os.environ.get("PORT", 8001))
+    host = os.environ.get("HOST", "0.0.0.0")
+    
+    # Construct the agent URL
+    if host == "0.0.0.0":
+        agent_url = f"http://localhost:{port}"
+    else:
+        agent_url = f"http://{host}:{port}"
+    
+    agent_card = AgentCard(
+        name="financial-analysis-agent",
+        description="Specialized Financial Analysis and Business Intelligence Assistant for Python-based analytics",
+        url=agent_url,
+        version="1.0.0",
+        protocol_version="1.0",
+        default_input_modes=["text"],
+        default_output_modes=["text"],
+        capabilities=AgentCapabilities(
+            streaming=True,
+            push_notifications=False
+        ),
+        skills=[
+            AgentSkill(
+                id="sales-data-analysis",
+                name="Sales Data Analysis",
+                description="Search and analyze sales data, product performance, and revenue trends",
+                examples=[
+                    "What were our top-performing products last quarter?",
+                    "Show me sales data for the electronics category",
+                    "Analyze revenue trends for Q3"
+                ],
+                tags=["sales", "analytics", "revenue", "products"]
+            ),
+            AgentSkill(
+                id="business-metrics-calculation",
+                name="Business Metrics Calculation",
+                description="Calculate key business metrics like CAC, LTV, growth rates, and profit margins",
+                examples=[
+                    "Calculate our customer acquisition cost by segment",
+                    "What's our customer lifetime value?",
+                    "Show me profit margin analysis"
+                ],
+                tags=["metrics", "finance", "kpi", "calculations"]
+            ),
+            AgentSkill(
+                id="financial-reporting",
+                name="Financial Reporting",
+                description="Generate comprehensive financial reports and executive summaries",
+                examples=[
+                    "Generate an executive financial summary for the board",
+                    "Create a quarterly financial report",
+                    "Analyze employee performance metrics"
+                ],
+                tags=["reporting", "finance", "executive", "summaries"]
+            ),
+            AgentSkill(
+                id="data-processing",
+                name="Data Processing",
+                description="Process and analyze CSV/Excel files, run database queries, and perform statistical analysis",
+                examples=[
+                    "Parse this financial CSV file",
+                    "Run a database query for customer data",
+                    "Perform statistical analysis on revenue data"
+                ],
+                tags=["data", "processing", "csv", "excel", "database", "statistics"]
+            )
+        ]
+    )
+    
+    # Create A2A host agent with simple agent for protocol and full agent for execution
+    return A2AHostAgent(simple_agent, agent_card, financial_agent)
+
+# Initialize A2A agent
+a2a_agent = create_a2a_agent()
 
 
 def create_app() -> FastAPI:
@@ -186,8 +284,65 @@ async def health_check():
         "status": "healthy", 
         "agent": "python-financial-agent", 
         "version": "1.0.0",
-        "agent_framework": "Microsoft Agent Framework" if financial_agent else "Direct Tools"
+        "agent_framework": "Microsoft Agent Framework" if financial_agent else "Direct Tools",
+        "a2a_enabled": a2a_agent is not None
     }
+
+# A2A Protocol Endpoints
+
+@app.get("/.well-known/agent.json")
+async def a2a_well_known_discovery():
+    """A2A agent discovery endpoint following .well-known standard."""
+    if not a2a_agent:
+        raise HTTPException(status_code=503, detail="A2A agent not available")
+    
+    return await a2a_agent.handle_discovery_request()
+
+@app.get("/")
+async def a2a_discovery():
+    """A2A agent discovery endpoint (alternative)."""
+    if not a2a_agent:
+        raise HTTPException(status_code=503, detail="A2A agent not available")
+    
+    return await a2a_agent.handle_discovery_request()
+
+@app.post("/")
+async def a2a_task_execution(request: Dict[str, Any]):
+    """A2A task execution endpoint."""
+    if not a2a_agent:
+        raise HTTPException(status_code=503, detail="A2A agent not available")
+    
+    # Check if this is a task request
+    if "taskType" in request or "task_type" in request:
+        return await a2a_agent.handle_task_request(request)
+    
+    # If no task type, treat as a simple message
+    if "message" in request or "messages" in request:
+        task_request = {
+            "id": request.get("id", str(uuid.uuid4())),
+            "agentId": a2a_agent.agent_id,
+            "taskType": "chat",
+            "inputData": request
+        }
+        return await a2a_agent.handle_task_request(task_request)
+    
+    raise HTTPException(status_code=400, detail="Invalid A2A request format")
+
+@app.get("/task/{task_id}")
+async def a2a_task_status(task_id: str):
+    """A2A task status endpoint."""
+    if not a2a_agent:
+        raise HTTPException(status_code=503, detail="A2A agent not available")
+    
+    return await a2a_agent.handle_task_status_request(task_id)
+
+@app.delete("/task/{task_id}")
+async def a2a_task_cancel(task_id: str):
+    """A2A task cancellation endpoint."""
+    if not a2a_agent:
+        raise HTTPException(status_code=503, detail="A2A agent not available")
+    
+    return await a2a_agent.handle_task_cancellation(task_id)
 
 # Direct API endpoints for specific financial operations
 @app.get("/api/tools/sales")
