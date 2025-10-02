@@ -1,5 +1,7 @@
 using A2A;
 using Azure.Identity;
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Hosting;
 using Microsoft.Extensions.AI;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,9 +16,7 @@ builder.AddAzureChatCompletionsClient(connectionName: "foundry",
         })
     .AddChatClient("gpt-4.1");
 
-var app = builder.Build();
-
-app.MapGet("/", async () =>
+builder.AddAIAgent("document-management-agent", (sp, key) =>
 {
     var httpClient = new HttpClient()
     {
@@ -25,8 +25,13 @@ app.MapGet("/", async () =>
     };
     var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient);
 
-    var agent = await agentCardResolver.GetAIAgentAsync();
+    return agentCardResolver.GetAIAgentAsync().GetAwaiter().GetResult();
+});
 
+var app = builder.Build();
+
+app.MapGet("/", async ([FromKeyedServices("document-management-agent")] AIAgent agent) =>
+{
     var response = await agent.RunAsync("What is our remote work policy?");
 
     Console.WriteLine(response.Text);
