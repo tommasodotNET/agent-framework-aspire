@@ -55,30 +55,6 @@ Sample Questions:
 "Find the latest safety procedures for warehouse operations"
 "What are the approval requirements for purchases over $5000?"
 
-Is a Python-based agent hosted in a uv application (not uvicorn!). Please note uv is supported by Aspire in the Community Toolkit (https://learn.microsoft.com/en-us/dotnet/aspire/community-toolkit/hosting-python-extensions?tabs=dotnet-cli%2Cuv).
-
-Role: Financial analysis, reporting, and business metrics Local Tools (methods returning mocked data):
-
-- CSV/Excel file parsing and analysis
-- Database queries (SQLite, PostgreSQL local connections)
-- Financial calculations and trend analysis
-- Report generation (PDF, charts)
-- Data validation and cleaning
-- Statistical analysis libraries (pandas, numpy)
-
-Data Sources:
-
-- Sales reports, revenue data, expense tracking
-- Employee performance metrics, payroll data
-- Inventory levels, supply chain data
-- Customer demographics and behavior analytics
-
-Sample Questions:
-
-"What were our top-performing products last quarter?"
-"Show me the sales trend for the past 6 months"
-"Calculate our customer acquisition cost"
-
 ## Python Agent
 
 Is a Python-based agent hosted in a uv application (not uvicorn!). Please note uv is supported by Aspire in the Community Toolkit (https://learn.microsoft.com/en-us/dotnet/aspire/community-toolkit/hosting-python-extensions?tabs=dotnet-cli%2Cuv).
