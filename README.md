@@ -42,11 +42,13 @@ src/
 ├── agents-python/              # Python API for RAG
 │   ├── services/               # Services for Python Agent
 │   └── tools/                  # Tools for Python Agent
-├── Agents.Dotnet/              # .NET Agent API
-│   ├── Services/               # Services for .NET Agent
-│   └── Tools/                  # Tools for .NET Agent
-├── AppHost/                    # Aspire App Host
-└── ServiceDefaults/            # Default configurations for services
+├── agents-dotnet/              # .NET Agent API
+│   ├── services/               # Services for .NET Agent
+│   └── tools/                  # Tools for .NET Agent
+├── groupchat-dotnet/           # .NET Group Chat API
+├── apphost/                    # Aspire App Host
+├── apphost-singlefile/         # Aspire App Host
+└── servicedefaults/            # Default configurations for services
 ```
 
 ## .NET Agent
