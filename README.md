@@ -2,7 +2,19 @@
 
 This repository contains a sample implementation of an agent framework using Aspire, demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
 
-## Run the sample
+## Run the sample`
+
+To allow Aspire to create or reference existing resources on Azure (e.g. Foundry), you need to configure Azure settings in the [appsettings.json](./src/apphost/appsettings.json) file:
+
+```json
+"Azure": {
+  "SubscriptionId": "<YOUR-SUBSCRIPTION-ID>",
+  "AllowResourceGroupCreation": true,
+  "ResourceGroup": "<YOUR-RESOURCE-GROUP>",
+  "Location": "<YOUR-LOCATION>",
+  "CredentialSource": "AzureCli"
+}
+```
 
 Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample:
 
