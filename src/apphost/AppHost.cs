@@ -10,6 +10,10 @@ var existingFoundryResourceGroup = builder.AddParameter("existingFoundryResource
 var foundry = builder.AddAzureAIFoundry("foundry")
     .AsExisting(existingFoundryName, existingFoundryResourceGroup);
 
+tenantId.WithParentRelationship(foundry);
+existingFoundryName.WithParentRelationship(foundry);
+existingFoundryResourceGroup.WithParentRelationship(foundry);
+
 #pragma warning disable ASPIRECOSMOSDB001
 var cosmos = builder.AddAzureCosmosDB("cosmos-db")
     .RunAsPreviewEmulator(
@@ -55,6 +59,10 @@ var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithReference(pythonAgent)
     .WaitFor(dotnetAgent)
     .WaitFor(pythonAgent)
-    .WithHttpEndpoint(env: "PORT");
-
+    .WithHttpEndpoint(env: "PORT")
+    .WithUrls((e) =>
+    {
+        e.Urls.Clear();
+        e.Urls.Add(new() { Url = "/", DisplayText = "💬Chat", Endpoint = e.GetEndpoint("http") });
+    });
 builder.Build().Run();
