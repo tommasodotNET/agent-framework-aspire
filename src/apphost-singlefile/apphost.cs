@@ -19,6 +19,10 @@ var existingFoundryResourceGroup = builder.AddParameter("existingFoundryResource
 var foundry = builder.AddAzureAIFoundry("foundry")
     .AsExisting(existingFoundryName, existingFoundryResourceGroup);
 
+tenantId.WithParentRelationship(foundry);
+existingFoundryName.WithParentRelationship(foundry);
+existingFoundryResourceGroup.WithParentRelationship(foundry);
+
 #pragma warning disable ASPIRECOSMOSDB001
 var cosmos = builder.AddAzureCosmosDB("cosmos-db")
     .RunAsPreviewEmulator(
@@ -50,13 +54,12 @@ var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet
     .WithReference(foundry)
     .WithEnvironment("TenantId", tenantId)
     .WithReference(dotnetAgent)
-    .WithEnvironment("dotnetagenturl", $"{dotnetAgent.GetEndpoint("https")}")
     .WaitFor(foundry)
     .WithUrls((e) =>
     {
         e.Urls.Clear();
-        e.Urls.Add(new() { Url = "/test-a2a-agent", DisplayText = "💬A2A Agent", Endpoint = e.GetEndpoint("https") });
-        e.Urls.Add(new() { Url = "/agent/chat", DisplayText = "💬Group Chat", Endpoint = e.GetEndpoint("https") });
+        e.Urls.Add(new() { Url = "/test-a2a-agent", DisplayText = "💬A2A Agent", Endpoint = e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/agent/chat", DisplayText = "💬Group Chat", Endpoint = e.GetEndpoint("http") });
     });
 
 var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
@@ -65,6 +68,11 @@ var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithReference(pythonAgent)
     .WaitFor(dotnetAgent)
     .WaitFor(pythonAgent)
-    .WithHttpEndpoint(env: "PORT");
+    .WithHttpEndpoint(env: "PORT")
+    .WithUrls((e) =>
+    {
+        e.Urls.Clear();
+        e.Urls.Add(new() { Url = "/", DisplayText = "💬Chat", Endpoint = e.GetEndpoint("http") });
+    });
 
 builder.Build().Run();
