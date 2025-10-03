@@ -18,6 +18,22 @@ To ease the debug experience, you can use the [Aspire extension for Visual Studi
 
 > Note: To support python telemetry, I'm setting Aspire to run with the http profile. Therefore, the endpoints for the services are http only. You can easily switch to https by changing profile order in the [aspire launchsettings.json](./src/apphost/Properties/launchSettings.json) file. That will require to update the [AppHost.cs](./src/apphost/AppHost.cs) to change the group chat endpoints to https.
 
+### Aspire single-file AppHost
+
+This sample can be use with single-file AppHost. Change the aspire configuration in the [.aspire/settings.json](./.aspire/settings.json) file to point to the [apphost.cs](./src/apphost-singlefile/apphost.cs) file:
+
+```json
+{
+  "features": {
+    "singlefileAppHostEnabled": "true",
+    "minimumSdkCheckEnabled": "false"
+  },
+  "appHostPath": "../src/apphost-singlefile/apphost.cs"
+}
+```
+
+Then run the sample as usual with `aspire run`.
+
 ## Folder Structure
 
 ```
