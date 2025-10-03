@@ -14,6 +14,10 @@ cd ..
 aspire run
 ```
 
+To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.).
+
+> Note: To support python telemetry, I'm setting Aspire to run with the http profile. Therefore, the endpoints for the services are http only. You can easily switch to https by changing profile order in the [aspire launchsettings.json](./src/apphost/Properties/launchSettings.json) file. That will require to update the [AppHost.cs](./src/apphost/AppHost.cs) to change the group chat endpoints to https.
+
 ## Folder Structure
 
 ```
