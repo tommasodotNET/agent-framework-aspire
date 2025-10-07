@@ -2,7 +2,9 @@
 
 This repository contains a sample implementation of an agent framework using Aspire, demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
 
-## Run the sample`
+## Run the sample
+
+> This sample requires .Net 10 Preview SDK and Python 3.11+ installed on your machine.
 
 To allow Aspire to create or reference existing resources on Azure (e.g. Foundry), you need to configure Azure settings in the [appsettings.json](./src/apphost/appsettings.json) file:
 
