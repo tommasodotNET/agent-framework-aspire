@@ -87,9 +87,12 @@ Data Sources:
 
 Sample Questions:
 
-"What's our remote work policy?"
-"Find the latest safety procedures for warehouse operations"
-"What are the approval requirements for purchases over $5000?"
+This question will invoke the remote mcp tool":
+- "What's our remote work policy?"
+
+While these questions will invoke local tools:
+- "Find the latest safety procedures for warehouse operations"
+- "What are the approval requirements for purchases over $5000?"
 
 ## Python Agent
 
@@ -113,6 +116,6 @@ Data Sources:
 
 Sample Questions:
 
-"What were our top-performing products last quarter?"
-"Show me the sales trend for the past 6 months"
-"Calculate our customer acquisition cost"
+- "What were our top-performing products last quarter?"
+- "Show me the sales trend for the past 6 months"
+- "Calculate our customer acquisition cost"
