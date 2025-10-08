@@ -1,6 +1,18 @@
 # Agent Framework Aspire
 
-This repository contains a sample implementation of an agent framework using Aspire, demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
+This repository contains a sample implementation of the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework/) using [Aspire](https://github.com/dotnet/aspire/), demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
+
+## Features
+
+- Building agent with .NET and Agent Framework
+- Building agent with Python and Agent Framework
+- Agent orchestration with .NET and Agent Framework
+- Inter-agent communication (A2A) with .NET and Agent Framework
+- Using MCP with .NET and Agent Framework
+- Using function filtering with Agent Framework
+- Test agents behaviour without using evaluation frameworks
+- Using Aspire to host multi-agent applications
+
 
 ## Run the sample
 
@@ -123,3 +135,7 @@ Sample Questions:
 ## Dotnet Group Chat
 
 Is a .NET-based group chat that creates a local agent with the same capabilities of the Python Agent and reference the .NET agent via A2A. It can be easily invoked with a hardcoded prompt for convenience from the Aspire dashboard.
+
+## Test project
+
+The assumption in the test project is that the agents will respond correctly if they invoke the correct tools with the correct parameters. I use function filters to gather the tools invocations and parameters and validate them against the expected ones. This way I can test the agents behaviour without using evaluation frameworks.
