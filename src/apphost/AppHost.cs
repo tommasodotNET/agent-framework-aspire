@@ -25,7 +25,8 @@ var cosmos = builder.AddAzureCosmosDB("cosmos-db")
 var db = cosmos.AddCosmosDatabase("db");
 var conversations = db.AddContainer("conversations", "/conversationId");
 
-var mcpServer = builder.AddProject("mcpserver", "../mcp-server-dotnet/McpServer.Dotnet.csproj");
+var mcpServer = builder.AddProject("mcpserver", "../mcp-server-dotnet/McpServer.Dotnet.csproj")
+    .WithHttpHealthCheck("/health");
 
 var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dotnet.csproj")
     .WithHttpHealthCheck("/health")

@@ -5,10 +5,10 @@ using System.Text.Json;
 namespace McpServer.Dotnet.Tools;
 
 [McpServerToolType]
-public static class DocumentProcessingTools
+public class DocumentProcessingTools
 {
     [McpServerTool, Description("Process and extract text content from a document file (PDF, Word, PowerPoint)")]
-    public static string ProcessDocument(
+    public string ProcessDocument(
         [Description("Base64 encoded document content")] string documentContent,
         [Description("Document file name with extension")] string fileName)
     {
@@ -51,7 +51,7 @@ public static class DocumentProcessingTools
     }
 
     [McpServerTool, Description("Extract and summarize key information from a processed document")]
-    public static string SummarizeDocument(
+    public string SummarizeDocument(
         [Description("The extracted text content from a document")] string documentText,
         [Description("Type of summary required (brief, detailed, key-points)")] string summaryType = "brief")
     {
@@ -99,7 +99,7 @@ public static class DocumentProcessingTools
     }
 
     [McpServerTool, Description("Analyze document content for compliance with company policies")]
-    public static string AnalyzeCompliance(
+    public string AnalyzeCompliance(
         [Description("The document content to analyze")] string documentContent,
         [Description("Policy framework to check against (ISO, SOX, GDPR, etc.)")] string policyFramework = "general")
     {
@@ -147,7 +147,7 @@ public static class DocumentProcessingTools
     }
 
     [McpServerTool, Description("Convert document content to different formats for processing")]
-    public static string ConvertDocumentFormat(
+    public string ConvertDocumentFormat(
         [Description("Source document content")] string documentContent,
         [Description("Source format (pdf, docx, pptx, txt)")] string sourceFormat,
         [Description("Target format (json, xml, markdown, plain-text)")] string targetFormat)
