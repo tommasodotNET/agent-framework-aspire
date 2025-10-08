@@ -30,12 +30,10 @@ var mcpServer = builder.AddProject("mcpserver", "../mcp-server-dotnet/McpServer.
 
 var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
-    .WithReference(foundry)
+    .WithReference(foundry).WaitFor(foundry)
     .WithReference(conversations).WaitFor(conversations)
-    .WithEnvironment("TenantId", tenantId)
-    .WithReference(mcpServer)
-    .WaitFor(foundry)
-    .WaitFor(mcpServer);
+    .WithReference(mcpServer).WaitFor(mcpServer)
+    .WithEnvironment("TenantId", tenantId);
 
 #pragma warning disable ASPIREHOSTINGPYTHON001
 var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
@@ -47,10 +45,9 @@ var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
 
 var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
-    .WithReference(foundry)
+    .WithReference(foundry).WaitFor(foundry)
+    .WithReference(dotnetAgent).WaitFor(dotnetAgent)
     .WithEnvironment("TenantId", tenantId)
-    .WithReference(dotnetAgent)
-    .WaitFor(foundry)
     .WithUrls((e) =>
     {
         e.Urls.Clear();
@@ -60,10 +57,8 @@ var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet
 
 var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithNpmPackageInstallation()
-    .WithReference(dotnetAgent)
-    .WithReference(pythonAgent)
-    .WaitFor(dotnetAgent)
-    .WaitFor(pythonAgent)
+    .WithReference(dotnetAgent).WaitFor(dotnetAgent)
+    .WithReference(pythonAgent).WaitFor(pythonAgent)
     .WithHttpEndpoint(env: "PORT")
     .WithUrls((e) =>
     {
