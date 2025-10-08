@@ -33,12 +33,19 @@ builder.Services.AddSingleton<ICosmosRepository, SampleCosmosRepository>();
 builder.Services.AddSingleton(sp =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    
     var mcpServerUrl = Environment.GetEnvironmentVariable("services__mcpserver__https__0") 
            ?? Environment.GetEnvironmentVariable("services__mcpserver__http__0")!;
     
+    // Append the MCP endpoint path
+    var mcpEndpoint = new Uri(new Uri(mcpServerUrl), "/mcp");
+    
+    logger.LogInformation("Connecting to MCP server at {McpEndpoint}", mcpEndpoint);
+    
     var transport = new HttpClientTransport(new HttpClientTransportOptions
     {
-        Endpoint = new Uri(mcpServerUrl)
+        Endpoint = mcpEndpoint
     });
     
     return McpClient.CreateAsync(transport).GetAwaiter().GetResult();
