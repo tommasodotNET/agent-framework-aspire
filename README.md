@@ -30,17 +30,21 @@ To allow Aspire to create or reference existing resources on Azure (e.g. Foundry
 }
 ```
 
-Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample:
+If you want to run the Python agent alongside the .NET agent, you need to install the dependencies using uv:
 
 ```bash
 cd src/agents-python
 uv sync --prerelease=allow
 uv run agents_python.main:main
-cd ..
+```
+
+Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample:
+
+```bash
 aspire run
 ```
 
-To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.).
+To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.). Otherwise, you can use the [C# Dev Kit for Visual Studio Code](https://learn.microsoft.com/it-it/visualstudio/subscriptions/vs-c-sharp-dev-kit).
 
 > Note: To support python telemetry, I'm setting Aspire to run with the http profile. Therefore, the endpoints for the services are http only. You can easily switch to https by changing profile order in the [aspire launchsettings.json](./src/apphost/Properties/launchSettings.json) file.
 
