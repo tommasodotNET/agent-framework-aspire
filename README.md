@@ -119,3 +119,7 @@ Sample Questions:
 - "What were our top-performing products last quarter?"
 - "Show me the sales trend for the past 6 months"
 - "Calculate our customer acquisition cost"
+
+## Dotnet Group Chat
+
+Is a .NET-based group chat that creates a local agent with the same capabilities of the Python Agent and reference the .NET agent via A2A. It can be easily invoked with a hardcoded prompt for convenience from the Aspire dashboard.
