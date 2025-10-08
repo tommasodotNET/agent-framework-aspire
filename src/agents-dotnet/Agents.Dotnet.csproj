@@ -19,6 +19,9 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting" Version="1.0.0-preview.251001.3" />
     <PackageReference Include="Microsoft.Agents.AI.Runtime" Version="0.2.0-250929-preview.250929" />
     <PackageReference Include="Microsoft.Agents.AI.Runtime.Abstractions" Version="0.2.0-250929-preview.250929" />
+    <PackageReference Include="Microsoft.Extensions.AI" Version="9.9.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
+    <PackageReference Include="ModelContextProtocol" Version="0.4.0-preview.1" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,6 +10,7 @@ using Agents.Dotnet.Tools;
 using System.Text.Json;
 using A2A.AspNetCore;
 using A2A;
+using ModelContextProtocol.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,12 +29,31 @@ builder.Services.AddSingleton<DocumentTools>();
 builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (option) => { option.Serializer = new CosmosSystemTextJsonSerializer(); });
 builder.Services.AddSingleton<ICosmosRepository, SampleCosmosRepository>();
 
+// Register MCP client as a singleton
+builder.Services.AddSingleton(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var mcpServerUrl = Environment.GetEnvironmentVariable("services__mcpserver__https__0") 
+           ?? Environment.GetEnvironmentVariable("services__mcpserver__http__0")!;
+    
+    var transport = new HttpClientTransport(new HttpClientTransportOptions
+    {
+        Endpoint = new Uri(mcpServerUrl)
+    });
+    
+    return McpClient.CreateAsync(transport).GetAwaiter().GetResult();
+});
+
 builder
     .AddAIAgent("document-management-agent", (sp, key) =>
     {
         var instrumentedChatClient = sp.GetRequiredService<IChatClient>();
         var documentTools = sp.GetRequiredService<DocumentTools>().GetFunctions();
-
+        var mcpClient = sp.GetRequiredService<McpClient>();
+        
+        // Retrieve the list of tools available on the MCP server
+        var mcpTools = mcpClient.ListToolsAsync().GetAwaiter().GetResult();
+        
         ChatClientAgentOptions options = new ()
         {
             Id = Guid.NewGuid().ToString(), //the agent identifier
@@ -59,12 +79,10 @@ Sample areas you can help with:
 - Document version management
 - Contract and legal document information",
             Description = "A friendly AI assistant", //the agent description
-            ChatOptions = new Microsoft.Extensions.AI.ChatOptions
+            ChatOptions = new ChatOptions
             {
                 Tools = [.. documentTools,
-                    AIFunctionFactory.Create(DocumentProcessingTools.ExtractPdfText),
-                    AIFunctionFactory.Create(DocumentProcessingTools.ParseOfficeDocument),
-                    AIFunctionFactory.Create(DocumentProcessingTools.IndexDocuments)],
+                    ..mcpTools.Cast<AITool>()],
             },
             
             ChatMessageStoreFactory = ctx =>
@@ -78,6 +96,7 @@ Sample areas you can help with:
         };
 
         var agent = new ChatClientAgent(instrumentedChatClient, options);
+
         return agent;
     });
 

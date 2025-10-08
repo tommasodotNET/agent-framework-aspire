@@ -25,12 +25,16 @@ var cosmos = builder.AddAzureCosmosDB("cosmos-db")
 var db = cosmos.AddCosmosDatabase("db");
 var conversations = db.AddContainer("conversations", "/conversationId");
 
+var mcpServer = builder.AddProject("mcpserver", "../mcp-server-dotnet/McpServer.Dotnet.csproj");
+
 var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry)
     .WithReference(conversations).WaitFor(conversations)
     .WithEnvironment("TenantId", tenantId)
-    .WaitFor(foundry);
+    .WithReference(mcpServer)
+    .WaitFor(foundry)
+    .WaitFor(mcpServer);
 
 #pragma warning disable ASPIREHOSTINGPYTHON001
 var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
