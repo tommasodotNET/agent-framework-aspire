@@ -8,7 +8,6 @@ using Agents.Dotnet.Models.UI;
 using Agents.Dotnet.Services;
 using Agents.Dotnet.Tools;
 using System.Text.Json;
-using A2A.AspNetCore;
 using A2A;
 
 var builder = WebApplication.CreateBuilder(args);
