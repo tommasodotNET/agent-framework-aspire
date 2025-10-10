@@ -63,7 +63,7 @@ var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithUrls((e) =>
     {
         e.Urls.Clear();
-        e.Urls.Add(new() { Url = "/", DisplayText = "💬Chat", Endpoint = e.GetEndpoint("https") ?? e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/", DisplayText = "💬Chat", Endpoint = e.GetEndpoint("http") });
     });
 
 builder.Build().Run();
