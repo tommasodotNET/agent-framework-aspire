@@ -2,13 +2,12 @@ using Azure.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.A2A;
+using Microsoft.Agents.AI.Hosting.A2A.AspNetCore;
 using Microsoft.Agents.AI.Hosting;
 using Agents.Dotnet.Models.UI;
 using Agents.Dotnet.Services;
 using Agents.Dotnet.Tools;
 using System.Text.Json;
-using A2A.AspNetCore;
 using A2A;
 using ModelContextProtocol.Client;
 
@@ -157,9 +156,10 @@ app.MapDefaultEndpoints();
 
 var agent = app.Services.GetKeyedService<AIAgent>("document-management-agent");
 
-var a2aAgent = new A2AHostAgent(agent!, new AgentCard
+app.MapA2A("document-management-agent", "/agenta2a", new AgentCard
 {
     Name = agent!.Name!,
+    Url = "http://localhost:5196/agenta2a",
     Description = "Document Management and Policy Compliance Assistant",
     Version = "1.0",
     DefaultInputModes = ["text"],
@@ -197,7 +197,5 @@ var a2aAgent = new A2AHostAgent(agent!, new AgentCard
     ]
 
 });
-
-app.MapA2A(a2aAgent.TaskManager!, "/");
 
 app.Run();

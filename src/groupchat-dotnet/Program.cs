@@ -30,7 +30,7 @@ builder.AddAIAgent("document-management-agent", (sp, key) =>
         BaseAddress = new Uri(Environment.GetEnvironmentVariable("services__dotnetagent__https__0") ?? Environment.GetEnvironmentVariable("services__dotnetagent__http__0")!),
         Timeout = TimeSpan.FromSeconds(60)
     };
-    var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient);
+    var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient, agentCardPath: "/agenta2a/v1/card");
 
     return agentCardResolver.GetAIAgentAsync().GetAwaiter().GetResult();
 });
