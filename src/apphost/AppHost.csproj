@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\agents-dotnet\Agents.Dotnet.csproj" />
     <ProjectReference Include="..\groupchat-dotnet\GroupChat.Dotnet.csproj" />
+    <ProjectReference Include="..\mcp-server-dotnet\McpServer.Dotnet.csproj" />
   </ItemGroup>
 
 </Project>

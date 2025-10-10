@@ -44,32 +44,6 @@ public class DocumentTools
         });
     }
 
-    [Description("Look up company policies by name, category, or keywords")]
-    public string LookupPolicy([Description("Policy name or keywords to search")] string query,
-                              [Description("Policy category filter (optional)")] string? category = null)
-    {
-        var results = _documentService.SearchPolicies(query, category).ToList();
-
-        return JsonSerializer.Serialize(new { 
-            query = query,
-            found = results.Count,
-            policies = results.Select(p => new {
-                id = p.Id,
-                name = p.Name,
-                description = p.Description,
-                category = p.Category.ToString(),
-                effectiveDate = p.EffectiveDate,
-                reviewDate = p.ReviewDate,
-                owner = p.Owner,
-                approver = p.Approver,
-                requirements = p.Requirements,
-                procedures = p.Procedures,
-                exceptions = p.Exceptions,
-                isActive = p.IsActive
-            })
-        });
-    }
-
     [Description("Check compliance rules for specific operations, amounts, or departments")]
     public string CheckCompliance([Description("Operation or activity to check")] string operation,
                                  [Description("Amount involved (if applicable)")] decimal? amount = null,
@@ -129,7 +103,6 @@ public class DocumentTools
     public IEnumerable<AIFunction> GetFunctions()
     {
         yield return AIFunctionFactory.Create(SearchDocuments);
-        yield return AIFunctionFactory.Create(LookupPolicy);
         yield return AIFunctionFactory.Create(CheckCompliance);
         yield return AIFunctionFactory.Create(CheckDocumentVersion);
     }

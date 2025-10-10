@@ -73,20 +73,6 @@ public class DocumentAgentBehaviorTests
     }
 
     [TestMethod]
-    public async Task Agent_WhenAskedAboutRemoteWorkPolicy_ShouldCallLookupPolicyTool()
-    {
-        // Arrange
-        var userMessage = new ChatMessage(ChatRole.User, "What's our remote work policy?");
-
-        // Act
-        var response = await _agent.RunAsync(userMessage, options: new ChatClientAgentRunOptions());
-
-        // Assert
-        Assert.IsTrue(WasFunctionCalled("LookupPolicy"), 
-            "Agent should have called the LookupPolicy function when asked about remote work policy");
-    }
-
-    [TestMethod]
     public async Task Agent_WhenAskedToSearchDocuments_ShouldCallSearchDocumentsTool()
     {
         // Arrange

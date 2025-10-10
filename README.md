@@ -1,22 +1,52 @@
 # Agent Framework Aspire
 
-This repository contains a sample implementation of an agent framework using Aspire, demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
+This repository contains a sample implementation of the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework/) using [Aspire](https://github.com/dotnet/aspire/), demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
+
+## Features
+
+- Building agent with .NET and Agent Framework
+- Building agent with Python and Agent Framework
+- Agent orchestration with .NET and Agent Framework
+- Inter-agent communication (A2A) with .NET and Agent Framework
+- Using MCP with .NET and Agent Framework
+- Using function filtering with Agent Framework
+- Test agents behaviour without using evaluation frameworks
+- Using Aspire to host multi-agent applications
+
 
 ## Run the sample
 
-Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample:
+> This sample requires .Net 10 Preview SDK and Python 3.11+ installed on your machine.
+
+To allow Aspire to create or reference existing resources on Azure (e.g. Foundry), you need to configure Azure settings in the [appsettings.json](./src/apphost/appsettings.json) file:
+
+```json
+"Azure": {
+  "SubscriptionId": "<YOUR-SUBSCRIPTION-ID>",
+  "AllowResourceGroupCreation": true,
+  "ResourceGroup": "<YOUR-RESOURCE-GROUP>",
+  "Location": "<YOUR-LOCATION>",
+  "CredentialSource": "AzureCli"
+}
+```
+
+If you want to run the Python agent alongside the .NET agent, you need to install the dependencies using uv:
 
 ```bash
 cd src/agents-python
 uv sync --prerelease=allow
 uv run agents_python.main:main
-cd ..
+```
+
+Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample:
+
+```bash
 aspire run
 ```
 
-To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.).
+To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.). Otherwise, you can use the [C# Dev Kit for Visual Studio Code](https://learn.microsoft.com/it-it/visualstudio/subscriptions/vs-c-sharp-dev-kit).
 
-> Note: To support python telemetry, I'm setting Aspire to run with the http profile. Therefore, the endpoints for the services are http only. You can easily switch to https by changing profile order in the [aspire launchsettings.json](./src/apphost/Properties/launchSettings.json) file. That will require to update the [AppHost.cs](./src/apphost/AppHost.cs) to change the group chat endpoints to https.
+> Note: To support python telemetry, I'm setting Aspire to run with the http profile. Therefore, the endpoints for the services are http only. You can easily switch to https by changing profile order in the [aspire launchsettings.json](./src/apphost/Properties/launchSettings.json) file.
 
 ### Aspire single-file AppHost
 
@@ -73,9 +103,12 @@ Data Sources:
 
 Sample Questions:
 
-"What's our remote work policy?"
-"Find the latest safety procedures for warehouse operations"
-"What are the approval requirements for purchases over $5000?"
+This question will invoke the remote mcp tool":
+- "What's our remote work policy?"
+
+While these questions will invoke local tools:
+- "Find the latest safety procedures for warehouse operations"
+- "What are the approval requirements for purchases over $5000?"
 
 ## Python Agent
 
@@ -99,6 +132,14 @@ Data Sources:
 
 Sample Questions:
 
-"What were our top-performing products last quarter?"
-"Show me the sales trend for the past 6 months"
-"Calculate our customer acquisition cost"
+- "What were our top-performing products last quarter?"
+- "Show me the sales trend for the past 6 months"
+- "Calculate our customer acquisition cost"
+
+## Dotnet Group Chat
+
+Is a .NET-based group chat that creates a local agent with the same capabilities of the Python Agent and reference the .NET agent via A2A. It can be easily invoked with a hardcoded prompt for convenience from the Aspire dashboard.
+
+## Test project
+
+The assumption in the test project is that the agents will respond correctly if they invoke the correct tools with the correct parameters. I use function filters to gather the tools invocations and parameters and validate them against the expected ones. This way I can test the agents behaviour without using evaluation frameworks.

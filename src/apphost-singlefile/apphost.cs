@@ -34,12 +34,15 @@ var cosmos = builder.AddAzureCosmosDB("cosmos-db")
 var db = cosmos.AddCosmosDatabase("db");
 var conversations = db.AddContainer("conversations", "/conversationId");
 
+var mcpServer = builder.AddProject("mcpserver", "../mcp-server-dotnet/McpServer.Dotnet.csproj")
+    .WithHttpHealthCheck("/health");
+
 var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
-    .WithReference(foundry)
+    .WithReference(foundry).WaitFor(foundry)
     .WithReference(conversations).WaitFor(conversations)
-    .WithEnvironment("TenantId", tenantId)
-    .WaitFor(foundry);
+    .WithReference(mcpServer).WaitFor(mcpServer)
+    .WithEnvironment("TenantId", tenantId);
 
 #pragma warning disable ASPIREHOSTINGPYTHON001
 var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
@@ -51,10 +54,9 @@ var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
 
 var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
-    .WithReference(foundry)
+    .WithReference(foundry).WaitFor(foundry)
+    .WithReference(dotnetAgent).WaitFor(dotnetAgent)
     .WithEnvironment("TenantId", tenantId)
-    .WithReference(dotnetAgent)
-    .WaitFor(foundry)
     .WithUrls((e) =>
     {
         e.Urls.Clear();
@@ -64,15 +66,13 @@ var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet
 
 var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithNpmPackageInstallation()
-    .WithReference(dotnetAgent)
-    .WithReference(pythonAgent)
-    .WaitFor(dotnetAgent)
-    .WaitFor(pythonAgent)
+    .WithReference(dotnetAgent).WaitFor(dotnetAgent)
+    .WithReference(pythonAgent).WaitFor(pythonAgent)
     .WithHttpEndpoint(env: "PORT")
     .WithUrls((e) =>
     {
         e.Urls.Clear();
-        e.Urls.Add(new() { Url = "/", DisplayText = "💬Chat", Endpoint = e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/", DisplayText = "💬Chat", Endpoint = e.GetEndpoint("https") ?? e.GetEndpoint("http") });
     });
 
 builder.Build().Run();

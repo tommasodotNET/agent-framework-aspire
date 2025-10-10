@@ -9,6 +9,7 @@ using Agents.Dotnet.Services;
 using Agents.Dotnet.Tools;
 using System.Text.Json;
 using A2A;
+using ModelContextProtocol.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,18 +26,45 @@ builder.AddAzureChatCompletionsClient(connectionName: "foundry",
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<DocumentTools>();
 builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (option) => { option.Serializer = new CosmosSystemTextJsonSerializer(); });
-builder.Services.AddSingleton<CosmosConversationRepository>();
+builder.Services.AddSingleton<ICosmosRepository, SampleCosmosRepository>();
+
+// Register MCP client as a singleton
+builder.Services.AddSingleton(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    
+    var mcpServerUrl = Environment.GetEnvironmentVariable("services__mcpserver__https__0") 
+           ?? Environment.GetEnvironmentVariable("services__mcpserver__http__0")!;
+    
+    // Append the MCP endpoint path
+    var mcpEndpoint = new Uri(new Uri(mcpServerUrl), "/mcp");
+    
+    logger.LogInformation("Connecting to MCP server at {McpEndpoint}", mcpEndpoint);
+    
+    var transport = new HttpClientTransport(new HttpClientTransportOptions
+    {
+        Endpoint = mcpEndpoint
+    });
+    
+    return McpClient.CreateAsync(transport).GetAwaiter().GetResult();
+});
 
 builder
     .AddAIAgent("document-management-agent", (sp, key) =>
     {
         var instrumentedChatClient = sp.GetRequiredService<IChatClient>();
-
         var documentTools = sp.GetRequiredService<DocumentTools>().GetFunctions();
-
-        var agent = new ChatClientAgent(instrumentedChatClient,
-                name: key,
-                instructions: @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
+        var mcpClient = sp.GetRequiredService<McpClient>();
+        
+        // Retrieve the list of tools available on the MCP server
+        var mcpTools = mcpClient.ListToolsAsync().GetAwaiter().GetResult();
+        
+        ChatClientAgentOptions options = new ()
+        {
+            Id = Guid.NewGuid().ToString(), //the agent identifier
+            Name = key, //the agent name
+            Instructions = @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
 
 Your capabilities include:
 - Searching and retrieving company documents, policies, and procedures
@@ -56,10 +84,24 @@ Sample areas you can help with:
 - Compliance rules and requirements
 - Document version management
 - Contract and legal document information",
-                tools: [.. documentTools,
-                AIFunctionFactory.Create(DocumentProcessingTools.ExtractPdfText),
-                AIFunctionFactory.Create(DocumentProcessingTools.ParseOfficeDocument),
-                AIFunctionFactory.Create(DocumentProcessingTools.IndexDocuments)]);
+            Description = "A friendly AI assistant", //the agent description
+            ChatOptions = new ChatOptions
+            {
+                Tools = [.. documentTools,
+                    ..mcpTools.Cast<AITool>()],
+            },
+            
+            ChatMessageStoreFactory = ctx =>
+            {
+                // Create a new chat message store for this agent that stores the messages in a cosmos store.
+                return new CustomMessageStore(
+                sp.GetRequiredService<ICosmosRepository>(),
+                ctx.SerializedState, //<-lo stato della conversazione serializzato qui ci devo fare arrivare l'id
+                ctx.JsonSerializerOptions);
+            }
+        };
+
+        var agent = new ChatClientAgent(instrumentedChatClient, options);
 
         return agent;
     });
@@ -68,11 +110,9 @@ var app = builder.Build();
 
 app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management-agent")] AIAgent agent,
     [FromBody] AIChatRequest request,
-    [FromServices] CosmosConversationRepository? conversationRepository,
     [FromServices] ILogger<Program> logger,
     HttpResponse response) =>
-{
-    var thread = await (agent as ChatClientAgent)!.GetThreadAsync(request.SessionState, conversationRepository, logger);
+{  
     var conversationId = request.SessionState ?? Guid.NewGuid().ToString();
 
     if (request.Messages.Count == 0)
@@ -88,16 +128,27 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management
     else
     {
         var message = request.Messages.LastOrDefault();
+
+        //let's create a CustomConversationState
+        CustomConversationState conversationState = new() { Id = conversationId };
+        //let's serialize the conversationstate to pass it to our CustomMessageStore
+        var serializedState = conversationState.Serialize();
+        //resume the thread with our CustomMessageStore
+        AgentThread resumedThread = agent.DeserializeThread(serializedState);
+
         var chatMessage = new ChatMessage(ChatRole.User, message.Content);
 
-        await foreach (var update in agent.RunStreamingAsync(chatMessage, thread))
+        //before invoking the agent MAF automatically calls the GetMessagesAsync of our CustomMessageStore
+        await foreach (var update in agent.RunStreamingAsync(chatMessage, resumedThread))
         {
             await response.WriteAsync($"{JsonSerializer.Serialize(new AIChatCompletionDelta(new AIChatMessageDelta() { Content = update.Text }))}\r\n");
             await response.Body.FlushAsync();
         }
+
+        //when the agent has finished MAF automatically calls the AddMessagesAsync of our CustomMessageStore
+
     }
 
-    await (agent as ChatClientAgent)!.SaveThreadAsync(thread, conversationId, conversationRepository, logger);
     return;
 });
 
