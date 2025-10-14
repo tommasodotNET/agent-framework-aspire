@@ -40,6 +40,7 @@ var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
     .WithHttpEndpoint(env: "PORT")
     .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingFoundryName}.openai.azure.com/")
     .WithEnvironment("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", "gpt-4.1")
+    .WithEnvironment("OTEL_PYTHON_CONFIGURATOR", "configurator")
     .WithOtlpExporter()
     .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true");
 
