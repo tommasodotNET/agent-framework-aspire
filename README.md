@@ -38,9 +38,21 @@ uv sync --prerelease=allow
 uv run agents_python.main:main
 ```
 
-Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample:
+Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample.
 
+Powershell:
 ```bash
+Invoke-RestMethod https://aspire.dev/install.ps1 -OutFile aspire-install.ps1
+./aspire-install.ps1 -q dev
+
+aspire run
+```
+
+Bash:
+```bash
+curl -sSL https://aspire.dev/install.sh -o aspire-install.sh
+./aspire-install.sh -q dev
+
 aspire run
 ```
 
