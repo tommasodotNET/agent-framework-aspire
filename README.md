@@ -35,7 +35,6 @@ If you want to run the Python agent alongside the .NET agent, you need to instal
 ```bash
 cd src/agents-python
 uv sync --prerelease=allow
-uv run agents_python.main:main
 ```
 
 Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample.
