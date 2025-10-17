@@ -4,7 +4,6 @@
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
 **/.env.local
-**/.env
 
 # User-specific files
 *.rsuser
@@ -401,7 +400,6 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-.env
 
 **/*/appsettings.Development.json
 agent-framework-aspire.sln
