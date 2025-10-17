@@ -71,8 +71,8 @@ app.MapGet("/test-python-a2a-agent", async ([FromKeyedServices("financial-analys
 app.MapGet("/agent/chat", async ([FromKeyedServices("group-chat")] AIAgent groupChatAgent) =>
 {
     var prompt = "According to our procurement policy, what vendors are we required to use for office supplies, and what has been our spending pattern with those vendors over the past 6 months?";
-    AgentRunResponse response = await groupChatAgent.RunAsync(prompt);
-    return Results.Ok(response);
+    var groupChatResponse = await groupChatAgent.RunAsync(prompt);
+    return Results.Ok(groupChatResponse);
 });
 
 app.MapDefaultEndpoints();
