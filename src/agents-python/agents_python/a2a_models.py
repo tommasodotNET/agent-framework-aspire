@@ -3,29 +3,39 @@ A2A (Agent-to-Agent) protocol models for inter-agent communication.
 These models match the Microsoft Agent Framework A2A protocol specification.
 """
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
+
+
+def to_camel_case(snake_str: str) -> str:
+    """Convert snake_case to camelCase."""
+    components = snake_str.split('_')
+    return components[0] + ''.join(word.capitalize() for word in components[1:])
 
 
 class AgentSkill(BaseModel):
     """Represents a skill or capability that the agent can perform."""
-    id: str = Field(alias="Id")
-    name: str = Field(alias="Name")
-    description: str = Field(alias="Description")
-    examples: List[str] = Field(alias="Examples")
-    tags: List[str] = Field(alias="Tags", default_factory=list)
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    id: str
+    name: str
+    description: str
+    examples: List[str]
+    tags: List[str] = Field(default_factory=list)
 
 
 class AgentCapabilities(BaseModel):
     """Represents the capabilities of an agent."""
-    streaming: bool = Field(alias="Streaming")
-    push_notifications: bool = Field(alias="PushNotifications")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    streaming: bool
+    push_notifications: bool
 
 
 class AgentCard(BaseModel):
@@ -33,83 +43,97 @@ class AgentCard(BaseModel):
     Represents an agent card containing metadata and capabilities.
     This is returned by the /agenta2a/v1/card endpoint.
     """
-    name: str = Field(alias="Name")
-    url: str = Field(alias="Url")
-    description: str = Field(alias="Description")
-    version: str = Field(alias="Version")
-    protocol_version: str = Field(alias="ProtocolVersion", default="1.0")
-    default_input_modes: List[str] = Field(alias="DefaultInputModes")
-    default_output_modes: List[str] = Field(alias="DefaultOutputModes")
-    capabilities: AgentCapabilities = Field(alias="Capabilities")
-    skills: List[AgentSkill] = Field(alias="Skills")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    name: str
+    url: str
+    description: str
+    version: str
+    protocol_version: str = "1.0"
+    default_input_modes: List[str]
+    default_output_modes: List[str]
+    capabilities: AgentCapabilities
+    skills: List[AgentSkill]
 
 
 # JSON-RPC 2.0 Models for A2A Communication
 
 class MessagePart(BaseModel):
     """A part of a message representing TextPart from .NET."""
-    kind: str = Field(alias="kind", default="text")
-    text: str = Field(alias="text")
-    metadata: Optional[Dict[str, Any]] = Field(default=None, alias="metadata")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    kind: str = "text"
+    text: str
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class AgentMessageResponse(BaseModel):
     """AgentMessage response structure matching .NET AgentMessage class."""
-    kind: str = Field(alias="kind", default="message")
-    role: str = Field(alias="role", default="agent")
-    parts: List[MessagePart] = Field(alias="parts")
-    metadata: Optional[Dict[str, Any]] = Field(default=None, alias="metadata")
-    reference_task_ids: Optional[List[str]] = Field(default=None, alias="referenceTaskIds")
-    message_id: str = Field(alias="messageId")
-    task_id: Optional[str] = Field(default=None, alias="taskId")
-    context_id: Optional[str] = Field(default=None, alias="contextId")
-    extensions: Optional[List[str]] = Field(default=None, alias="extensions")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    kind: str = "message"
+    role: str = "agent"
+    parts: List[MessagePart]
+    metadata: Optional[Dict[str, Any]] = None
+    reference_task_ids: Optional[List[str]] = None
+    message_id: str
+    task_id: Optional[str] = None
+    context_id: Optional[str] = None
+    extensions: Optional[List[str]] = None
 
 
 class JsonRpcMessage(BaseModel):
     """JSON-RPC message structure."""
-    kind: str = Field(alias="kind")
-    role: str = Field(alias="role")
-    parts: List[MessagePart] = Field(alias="parts")
-    message_id: Optional[str] = Field(default=None, alias="messageId")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    kind: str
+    role: str
+    parts: List[MessagePart]
+    message_id: Optional[str] = None
 
 
 class JsonRpcParams(BaseModel):
     """JSON-RPC parameters."""
-    message: JsonRpcMessage = Field(alias="message")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    message: JsonRpcMessage
 
 
 class JsonRpcRequest(BaseModel):
     """JSON-RPC 2.0 request structure."""
-    jsonrpc: str = Field(alias="jsonrpc")
-    id: str = Field(alias="id")
-    method: str = Field(alias="method")
-    params: JsonRpcParams = Field(alias="params")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    jsonrpc: str
+    id: str
+    method: str
+    params: JsonRpcParams
 
 
 class JsonRpcResponse(BaseModel):
     """JSON-RPC 2.0 response structure."""
-    jsonrpc: str = Field(alias="jsonrpc", default="2.0")
-    id: str = Field(alias="id")
-    result: AgentMessageResponse = Field(alias="result")
-
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(
+        alias_generator=to_camel_case,
+        populate_by_name=True
+    )
+    
+    jsonrpc: str = "2.0"
+    id: str
+    result: AgentMessageResponse

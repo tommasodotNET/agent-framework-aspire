@@ -54,6 +54,23 @@ var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
     .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true")
     .WithEnvironment("AZURE_TENANT_ID", tenantId);
 
+var pythonCustomWorkflow = builder.AddUvApp("pythonCustomWorkflow", "../custom-workflow-python", "start")
+    .WithHttpEndpoint(env: "PORT")
+    .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingFoundryName}.openai.azure.com/")
+    .WithEnvironment("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", "gpt-4.1")
+    .WithEnvironment("OTEL_PYTHON_CONFIGURATOR", "configurator")
+    .WithOtlpExporter()
+    .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true")
+    .WithEnvironment("AZURE_TENANT_ID", tenantId)
+    .WithReference(dotnetAgent).WaitFor(dotnetAgent)
+    .WithReference(pythonAgent).WaitFor(pythonAgent)
+        .WithUrls((e) =>
+    {
+        e.Urls.Clear();
+        e.Urls.Add(new() { Url = "/analyze", DisplayText = "💬Custom Workflow", Endpoint = e.GetEndpoint("http") });
+    });
+
+
 var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)

@@ -200,94 +200,94 @@ async def get_agent_card():
     base_url = f"http://localhost:{port}"
     
     agent_card = AgentCard(
-        Name="financial-analysis-agent",
-        Url=f"{base_url}/agenta2a",
-        Description="Python-based agent for financial analysis, reporting, and business metrics using Microsoft Agent Framework",
-        Version="1.0.0",
-        ProtocolVersion="1.0",
-        DefaultInputModes=["text"],
-        DefaultOutputModes=["text"],
-        Capabilities=AgentCapabilities(
-            Streaming=True,
-            PushNotifications=False
+        name="financial-analysis-agent",
+        url=f"{base_url}/agenta2a",
+        description="Python-based agent for financial analysis, reporting, and business metrics using Microsoft Agent Framework",
+        version="1.0.0",
+        protocol_version="1.0",
+        default_input_modes=["text"],
+        default_output_modes=["text"],
+        capabilities=AgentCapabilities(
+            streaming=False,
+            push_notifications=False
         ),
-        Skills=[
+        skills=[
             AgentSkill(
-                Id="sales-data-analysis",
-                Name="Sales Data Analysis",
-                Description="Search and analyze sales data with filtering by date range, category, and other criteria",
-                Examples=[
+                id="sales-data-analysis",
+                name="Sales Data Analysis",
+                description="Search and analyze sales data with filtering by date range, category, and other criteria",
+                examples=[
                     "Show me sales data for the last quarter",
                     "What were our top-selling products in electronics last month?",
                     "Get sales performance for Q3 2024"
                 ],
-                Tags=["sales", "data-analysis", "reporting"]
+                tags=["sales", "data-analysis", "reporting"]
             ),
             AgentSkill(
-                Id="revenue-trend-analysis",
-                Name="Revenue Trend Analysis",
-                Description="Analyze revenue trends and generate growth forecasts with detailed insights",
-                Examples=[
+                id="revenue-trend-analysis",
+                name="Revenue Trend Analysis",
+                description="Analyze revenue trends and generate growth forecasts with detailed insights",
+                examples=[
                     "Analyze revenue trends for the past year",
                     "What's our revenue growth trajectory?", 
                     "Show me monthly revenue patterns"
                 ],
-                Tags=["revenue", "trends", "forecasting", "analysis"]
+                tags=["revenue", "trends", "forecasting", "analysis"]
             ),
             AgentSkill(
-                Id="business-metrics-calculation",
-                Name="Business Metrics Calculation",
-                Description="Calculate key business metrics like profit margins, growth rates, and performance indicators",
-                Examples=[
+                id="business-metrics-calculation",
+                name="Business Metrics Calculation",
+                description="Calculate key business metrics like profit margins, growth rates, and performance indicators",
+                examples=[
                     "Calculate our profit margin for Q4",
                     "What's our revenue growth rate?",
                     "Show me customer acquisition cost metrics"
                 ],
-                Tags=["metrics", "calculations", "kpi", "business-intelligence"]
+                tags=["metrics", "calculations", "kpi", "business-intelligence"]
             ),
             AgentSkill(
-                Id="top-products-analysis",
-                Name="Top Products Analysis",
-                Description="Identify and analyze top-performing products by various metrics and time periods",
-                Examples=[
+                id="top-products-analysis",
+                name="Top Products Analysis",
+                description="Identify and analyze top-performing products by various metrics and time periods",
+                examples=[
                     "What are our top 10 products by revenue?",
                     "Show me best-selling products last quarter",
                     "Which products have the highest profit margins?"
                 ],
-                Tags=["products", "performance", "ranking", "analysis"]
+                tags=["products", "performance", "ranking", "analysis"]
             ),
             AgentSkill(
-                Id="customer-analytics",
-                Name="Customer Analytics",
-                Description="Perform customer segmentation, lifetime value analysis, and churn prediction",
-                Examples=[
+                id="customer-analytics",
+                name="Customer Analytics",
+                description="Perform customer segmentation, lifetime value analysis, and churn prediction",
+                examples=[
                     "Analyze customer segments by purchase behavior",
                     "Calculate customer lifetime value",
                     "What's our customer retention rate?"
                 ],
-                Tags=["customers", "segmentation", "lifetime-value", "churn", "analytics"]
+                tags=["customers", "segmentation", "lifetime-value", "churn", "analytics"]
             ),
             AgentSkill(
-                Id="financial-reporting",
-                Name="Financial Reporting",
-                Description="Generate comprehensive financial reports and executive summaries",
-                Examples=[
+                id="financial-reporting",
+                name="Financial Reporting",
+                description="Generate comprehensive financial reports and executive summaries",
+                examples=[
                     "Generate a financial summary for the board",
                     "Create a Q4 revenue report",
                     "Prepare executive dashboard metrics"
                 ],
-                Tags=["reporting", "financial", "executive", "dashboard"]
+                tags=["reporting", "financial", "executive", "dashboard"]
             ),
             AgentSkill(
-                Id="data-processing",
-                Name="Data Processing",
-                Description="Process and analyze CSV/Excel files, validate financial data, and perform statistical analysis",
-                Examples=[
+                id="data-processing",
+                name="Data Processing",
+                description="Process and analyze CSV/Excel files, validate financial data, and perform statistical analysis",
+                examples=[
                     "Parse this sales data CSV file",
                     "Validate financial data consistency",
                     "Perform statistical analysis on revenue data"
                 ],
-                Tags=["data-processing", "csv", "excel", "validation", "statistics"]
+                tags=["data-processing", "csv", "excel", "validation", "statistics"]
             )
         ]
     )
@@ -359,10 +359,10 @@ async def a2a_json_rpc_endpoint(request: dict):
                 kind="message",
                 role="agent",
                 parts=[MessagePart(kind="text", text=content)],
-                messageId=message_id,
-                contextId=None,
-                taskId=None,
-                referenceTaskIds=None,
+                message_id=message_id,
+                context_id=None,
+                task_id=None,
+                reference_task_ids=None,
                 extensions=None,
                 metadata={
                     "timestamp": datetime.utcnow().isoformat(),
@@ -507,7 +507,7 @@ def main():
         "agents_python.main:app",
         host=host,
         port=port,
-        reload=True,
+        reload=False,
         access_log=True,
         log_level="info",
     )
