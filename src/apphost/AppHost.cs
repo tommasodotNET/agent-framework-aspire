@@ -48,11 +48,13 @@ var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)
     .WithReference(dotnetAgent).WaitFor(dotnetAgent)
+    .WithReference(pythonAgent).WaitFor(pythonAgent)
     .WithEnvironment("TenantId", tenantId)
     .WithUrls((e) =>
     {
         e.Urls.Clear();
-        e.Urls.Add(new() { Url = "/test-a2a-agent", DisplayText = "💬A2A Agent", Endpoint = e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/test-dotnet-a2a-agent", DisplayText = "💬.NET A2A Agent", Endpoint = e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/test-python-a2a-agent", DisplayText = "💬Python A2A Agent", Endpoint = e.GetEndpoint("http") });
         e.Urls.Add(new() { Url = "/agent/chat", DisplayText = "💬Group Chat", Endpoint = e.GetEndpoint("http") });
     });
 

@@ -27,6 +27,7 @@ from agent_framework.azure import AzureOpenAIChatClient
 from azure.identity import DefaultAzureCredential
 
 from .models import AIChatRequest, AIChatCompletionDelta, AIChatMessageDelta
+from .a2a_models import AgentCard, AgentCapabilities, AgentSkill, JsonRpcRequest, JsonRpcResponse, AgentMessageResponse, MessagePart
 from services.financial_service import FinancialService
 from tools.financial_tools import FinancialTools
 from tools import financial_processing_tools
@@ -189,6 +190,252 @@ async def health_check():
         "version": "1.0.0",
         "agent_framework": "Microsoft Agent Framework" if financial_agent else "Direct Tools"
     }
+
+
+# A2A (Agent-to-Agent) Protocol Endpoints
+@app.get("/agenta2a/v1/card", response_model=AgentCard)
+async def get_agent_card():
+    """
+    Returns the agent card for A2A (Agent-to-Agent) communication.
+    This endpoint describes the agent's capabilities, skills, and metadata.
+    """
+    port = int(os.environ.get("PORT", 8001))
+    base_url = f"http://localhost:{port}"
+    
+    agent_card = AgentCard(
+        Name="financial-analysis-agent",
+        Url=f"{base_url}/agenta2a",
+        Description="Python-based agent for financial analysis, reporting, and business metrics using Microsoft Agent Framework",
+        Version="1.0.0",
+        ProtocolVersion="1.0",
+        DefaultInputModes=["text"],
+        DefaultOutputModes=["text"],
+        Capabilities=AgentCapabilities(
+            Streaming=True,
+            PushNotifications=False
+        ),
+        Skills=[
+            AgentSkill(
+                Id="sales-data-analysis",
+                Name="Sales Data Analysis",
+                Description="Search and analyze sales data with filtering by date range, category, and other criteria",
+                Examples=[
+                    "Show me sales data for the last quarter",
+                    "What were our top-selling products in electronics last month?",
+                    "Get sales performance for Q3 2024"
+                ],
+                Tags=["sales", "data-analysis", "reporting"]
+            ),
+            AgentSkill(
+                Id="revenue-trend-analysis",
+                Name="Revenue Trend Analysis",
+                Description="Analyze revenue trends and generate growth forecasts with detailed insights",
+                Examples=[
+                    "Analyze revenue trends for the past year",
+                    "What's our revenue growth trajectory?", 
+                    "Show me monthly revenue patterns"
+                ],
+                Tags=["revenue", "trends", "forecasting", "analysis"]
+            ),
+            AgentSkill(
+                Id="business-metrics-calculation",
+                Name="Business Metrics Calculation",
+                Description="Calculate key business metrics like profit margins, growth rates, and performance indicators",
+                Examples=[
+                    "Calculate our profit margin for Q4",
+                    "What's our revenue growth rate?",
+                    "Show me customer acquisition cost metrics"
+                ],
+                Tags=["metrics", "calculations", "kpi", "business-intelligence"]
+            ),
+            AgentSkill(
+                Id="top-products-analysis",
+                Name="Top Products Analysis",
+                Description="Identify and analyze top-performing products by various metrics and time periods",
+                Examples=[
+                    "What are our top 10 products by revenue?",
+                    "Show me best-selling products last quarter",
+                    "Which products have the highest profit margins?"
+                ],
+                Tags=["products", "performance", "ranking", "analysis"]
+            ),
+            AgentSkill(
+                Id="customer-analytics",
+                Name="Customer Analytics",
+                Description="Perform customer segmentation, lifetime value analysis, and churn prediction",
+                Examples=[
+                    "Analyze customer segments by purchase behavior",
+                    "Calculate customer lifetime value",
+                    "What's our customer retention rate?"
+                ],
+                Tags=["customers", "segmentation", "lifetime-value", "churn", "analytics"]
+            ),
+            AgentSkill(
+                Id="financial-reporting",
+                Name="Financial Reporting",
+                Description="Generate comprehensive financial reports and executive summaries",
+                Examples=[
+                    "Generate a financial summary for the board",
+                    "Create a Q4 revenue report",
+                    "Prepare executive dashboard metrics"
+                ],
+                Tags=["reporting", "financial", "executive", "dashboard"]
+            ),
+            AgentSkill(
+                Id="data-processing",
+                Name="Data Processing",
+                Description="Process and analyze CSV/Excel files, validate financial data, and perform statistical analysis",
+                Examples=[
+                    "Parse this sales data CSV file",
+                    "Validate financial data consistency",
+                    "Perform statistical analysis on revenue data"
+                ],
+                Tags=["data-processing", "csv", "excel", "validation", "statistics"]
+            )
+        ]
+    )
+    
+    return agent_card
+
+
+@app.post("/agenta2a")
+async def a2a_json_rpc_endpoint(request: dict):
+    """
+    A2A JSON-RPC 2.0 endpoint for agent-to-agent communication.
+    Handles message/send method calls from other agents.
+    """
+    import uuid
+    from datetime import datetime
+    
+    # Log the incoming request for debugging
+    print(f"Received A2A request: {request}")
+    
+    try:
+        # Handle JSON-RPC 2.0 format
+        if "jsonrpc" in request and "method" in request and request["method"] == "message/send":
+            # Extract message from JSON-RPC params
+            params = request.get("params", {})
+            message = params.get("message", {})
+            parts = message.get("parts", [])
+            
+            # Extract text content from parts
+            text_content = ""
+            for part in parts:
+                if part.get("kind") == "text" and part.get("text"):
+                    text_content += part["text"] + " "
+            text_content = text_content.strip()
+            
+            if not text_content:
+                text_content = "Hello, I'm ready to help with financial analysis!"
+                
+            original_message_id = message.get("messageId")
+            
+        else:
+            # Fallback for other formats
+            if "Message" in request:
+                text_content = request["Message"].get("Content", "")
+            elif "message" in request:
+                text_content = request["message"].get("content", "")
+            else:
+                text_content = "Hello, I'm ready to help with financial analysis!"
+            original_message_id = None
+        
+        # Generate a unique message ID
+        message_id = str(uuid.uuid4())
+        
+        # Process the message using our financial agent
+        if financial_agent and text_content:
+            try:
+                response_content = await financial_agent.run(text_content)
+                content = response_content.text
+            except Exception as e:
+                print(f"Agent processing error: {e}")
+                content = f"I received your question: '{text_content}'. I'm a financial analysis agent ready to help with business metrics, sales data, and financial reporting."
+        else:
+            # Fallback response if agent framework isn't available
+            content = f"I received your question: '{text_content}'. I'm a financial analysis agent ready to help with business metrics, sales data, and financial reporting."
+        
+        # Return JSON-RPC 2.0 response if it was a JSON-RPC request
+        if "jsonrpc" in request:
+            # Create the AgentMessage response structure
+            agent_message = AgentMessageResponse(
+                kind="message",
+                role="agent",
+                parts=[MessagePart(kind="text", text=content)],
+                messageId=message_id,
+                contextId=None,
+                taskId=None,
+                referenceTaskIds=None,
+                extensions=None,
+                metadata={
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "agent": "python-financial-agent",
+                    "version": "1.0.0",
+                    "original_message_id": original_message_id
+                }
+            )
+            
+            response = {
+                "jsonrpc": "2.0",
+                "id": request.get("id"),
+                "result": agent_message.model_dump(by_alias=True)
+            }
+        else:
+            # Return simple response for non-JSON-RPC requests (also in correct format)
+            response = {
+                "kind": "message",
+                "role": "agent",
+                "parts": [{"kind": "text", "text": content}],
+                "messageId": message_id,
+                "contextId": None,
+                "taskId": None,
+                "referenceTaskIds": None,
+                "extensions": None,
+                "metadata": {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "agent": "python-financial-agent",
+                    "version": "1.0.0"
+                }
+            }
+        
+        print(f"Sending A2A response: {response}")
+        return response
+        
+    except Exception as e:
+        print(f"Error processing A2A request: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return JSON-RPC error if it was a JSON-RPC request
+        if "jsonrpc" in request:
+            return {
+                "jsonrpc": "2.0",
+                "id": request.get("id", "unknown"),
+                "error": {
+                    "code": -32603,
+                    "message": "Internal error",
+                    "data": str(e)
+                }
+            }
+        else:
+            # Return simple error response in AgentMessage format
+            return {
+                "kind": "message",
+                "role": "agent",
+                "parts": [{"kind": "text", "text": "I encountered an error processing your request, but I'm a financial analysis agent ready to help!"}],
+                "messageId": str(uuid.uuid4()),
+                "contextId": None,
+                "taskId": None,
+                "referenceTaskIds": None,
+                "extensions": None,
+                "metadata": {
+                    "error": str(e),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "agent": "python-financial-agent",
+                    "version": "1.0.0"
+                }
+            }
+
 
 # Direct API endpoints for specific financial operations
 @app.get("/api/tools/sales")
