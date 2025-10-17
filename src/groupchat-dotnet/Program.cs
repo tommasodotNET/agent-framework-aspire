@@ -8,14 +8,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddAzureChatCompletionsClient(connectionName: "foundry",
-    configureSettings: settings =>
-        {
-            settings.TokenCredential = new DefaultAzureCredential(new DefaultAzureCredentialOptions() { TenantId = builder.Configuration.GetValue<string>("TenantId") });
-            settings.EnableSensitiveTelemetryData = true;
-        })
-    .AddChatClient("gpt-4.1");
-
 builder.AddAIAgent("document-management-agent", (sp, key) =>
 {
     var httpClient = new HttpClient()
@@ -40,6 +32,24 @@ builder.AddAIAgent("financial-analysis-agent", (sp, key) =>
     return agentCardResolver.GetAIAgentAsync().GetAwaiter().GetResult();
 });
 
+builder.AddAIAgent("group-chat", (sp, key) =>
+{
+    var documentAgent = sp.GetRequiredKeyedService<AIAgent>("document-management-agent");
+    var financialAgent = sp.GetRequiredKeyedService<AIAgent>("financial-analysis-agent");
+
+    Workflow workflow =
+        AgentWorkflowBuilder
+            .CreateGroupChatBuilderWith(agents =>
+                new AgentWorkflowBuilder.RoundRobinGroupChatManager(agents)
+                {
+                    MaximumIterationCount = 2
+                })
+            .AddParticipants(documentAgent, financialAgent)
+            .Build();
+
+    return workflow.AsAgentAsync(name: key).GetAwaiter().GetResult();
+});
+
 var app = builder.Build();
 
 app.MapGet("/test-dotnet-a2a-agent", async ([FromKeyedServices("document-management-agent")] AIAgent documentAgent) =>
@@ -58,24 +68,10 @@ app.MapGet("/test-python-a2a-agent", async ([FromKeyedServices("financial-analys
     return Results.Ok(new { FinancialAgent = documentResponse.Text });
 });
 
-app.MapGet("/agent/chat", async (
-    [FromKeyedServices("document-management-agent")] AIAgent documentAgent,
-    [FromKeyedServices("financial-analysis-agent")] AIAgent financialAgent) =>
+app.MapGet("/agent/chat", async ([FromKeyedServices("group-chat")] AIAgent groupChatAgent) =>
 {
-    Workflow workflow =
-        AgentWorkflowBuilder
-            .CreateGroupChatBuilderWith(agents =>
-                new AgentWorkflowBuilder.RoundRobinGroupChatManager(agents)
-                {
-                    MaximumIterationCount = 2
-                })
-            .AddParticipants(documentAgent, financialAgent)
-            .Build();
-
-    AIAgent workflowAgent = await workflow.AsAgentAsync();
-
     var prompt = "According to our procurement policy, what vendors are we required to use for office supplies, and what has been our spending pattern with those vendors over the past 6 months?";
-    AgentRunResponse response = await workflowAgent.RunAsync(prompt);
+    AgentRunResponse response = await groupChatAgent.RunAsync(prompt);
     return Results.Ok(response);
 });
 
