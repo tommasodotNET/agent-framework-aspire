@@ -22,6 +22,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 # Microsoft Agent Framework
 from agent_framework import ChatAgent
+from agent_framework.observability import get_tracer, setup_observability
 from agent_framework.azure import AzureOpenAIChatClient
 from azure.identity import DefaultAzureCredential
 
@@ -247,6 +248,10 @@ async def analyze_customers(
 
 
 def main():
+    # This will enable tracing and create the necessary tracing, logging and metrics providers
+    # based on environment variables. See the .env.example file for the available configuration options.
+    setup_observability()
+
     """Main entry point for the application."""
     port = int(os.environ.get("PORT", 8001))
     host = os.environ.get("HOST", "0.0.0.0")
