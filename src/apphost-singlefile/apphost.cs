@@ -51,14 +51,14 @@ var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
     .WithEnvironment("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", "gpt-4.1")
     .WithEnvironment("OTEL_PYTHON_CONFIGURATOR", "configurator")
     .WithOtlpExporter()
-    .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true");
+    .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true")
+    .WithEnvironment("AZURE_TENANT_ID", tenantId);
 
 var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)
     .WithReference(dotnetAgent).WaitFor(dotnetAgent)
     .WithReference(pythonAgent).WaitFor(pythonAgent)
-    .WithEnvironment("TenantId", tenantId)
     .WithUrls((e) =>
     {
         e.Urls.Clear();

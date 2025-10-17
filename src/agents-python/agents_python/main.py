@@ -40,11 +40,8 @@ financial_tools = FinancialTools(financial_service)
 def create_financial_agent() -> ChatAgent:
     """Create and configure the ChatAgent with financial analysis capabilities."""
     try:
-        # Use DefaultAzureCredential for authentication (matches .NET pattern)
-        # credential = DefaultAzureCredential()
-        
         agent = ChatAgent(
-            chat_client=AzureOpenAIChatClient(api_key=os.environ.get("AZURE_OPENAI_API_KEY")),
+            chat_client=AzureOpenAIChatClient(credential=DefaultAzureCredential()),
             instructions="""You are a specialized Financial Analysis and Business Intelligence Assistant. Your role is to help users analyze financial data, calculate business metrics, and generate insights for strategic decision-making.
 
 Your capabilities include:
