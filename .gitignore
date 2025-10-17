@@ -404,3 +404,4 @@ FodyWeavers.xsd
 .env
 
 **/*/appsettings.Development.json
+agent-framework-aspire.sln
