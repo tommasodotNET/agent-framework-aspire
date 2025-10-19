@@ -42,7 +42,7 @@ var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dot
     .WithReference(foundry).WaitFor(foundry)
     .WithReference(conversations).WaitFor(conversations)
     .WithReference(mcpServer).WaitFor(mcpServer)
-    .WithEnvironment("TenantId", tenantId);
+    .WithEnvironment("AZURE_TENANT_ID", tenantId);
 
 #pragma warning disable ASPIREHOSTINGPYTHON001
 var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
@@ -69,7 +69,6 @@ var pythonCustomWorkflow = builder.AddUvApp("pythonCustomWorkflow", "../custom-w
         e.Urls.Clear();
         e.Urls.Add(new() { Url = "/analyze", DisplayText = "💬Custom Workflow", Endpoint = e.GetEndpoint("http") });
     });
-
 
 var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
