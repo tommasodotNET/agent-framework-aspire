@@ -64,12 +64,15 @@ var pythonCustomWorkflow = builder.AddUvApp("pythonCustomWorkflow", "../custom-w
 var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)
+    .WithReference(conversations).WaitFor(conversations)
     .WithReference(dotnetAgent).WaitFor(dotnetAgent)
     .WithReference(pythonAgent).WaitFor(pythonAgent)
+    .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithUrls((e) =>
     {
         e.Urls.Clear();
         e.Urls.Add(new() { Url = "/agent/chat", DisplayText = "💬Group Chat", Endpoint = e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/agent/chat/stream", DisplayText = "🔄Group Chat Stream", Endpoint = e.GetEndpoint("http") });
         e.Urls.Add(new() { Url = "/test-dotnet-a2a-agent", DisplayText = "💬.NET A2A Agent", Endpoint = e.GetEndpoint("http") });
         e.Urls.Add(new() { Url = "/test-python-a2a-agent", DisplayText = "💬Python A2A Agent", Endpoint = e.GetEndpoint("http") });
     });
@@ -78,6 +81,7 @@ var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
     .WithNpmPackageInstallation()
     .WithReference(dotnetAgent).WaitFor(dotnetAgent)
     .WithReference(pythonAgent).WaitFor(pythonAgent)
+    .WithReference(dotnetGroupChat).WaitFor(dotnetGroupChat)
     .WithHttpEndpoint(env: "PORT")
     .WithUrls((e) =>
     {

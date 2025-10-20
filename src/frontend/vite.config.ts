@@ -21,6 +21,10 @@ export default () => {
           target: process.env.services__pythonagent__http__0,
           rewrite: (path) => path.replace(/^\/agent\/python/, '/agent'),
         },
+        '/agent/groupchat': {
+          target: process.env.services__dotnetgroupchat__http__0,
+          rewrite: (path) => path.replace(/^\/agent\/groupchat/, '/agent'),
+        },
         // Legacy support - default to .NET API
         '/agent': {
           target: process.env.services__dotnetagent__http__0,

@@ -24,7 +24,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from agent_framework import ChatAgent
 from agent_framework.observability import get_tracer, setup_observability
 from agent_framework.azure import AzureOpenAIChatClient
-from azure.identity import DefaultAzureCredential
+from azure.identity import AzureCliCredential
 
 from .models import AIChatRequest, AIChatCompletionDelta, AIChatMessageDelta
 from .a2a_models import AgentCard, AgentCapabilities, AgentSkill, JsonRpcRequest, JsonRpcResponse, AgentMessageResponse, MessagePart
@@ -41,7 +41,7 @@ def create_financial_agent() -> ChatAgent:
     """Create and configure the ChatAgent with financial analysis capabilities."""
     try:
         agent = ChatAgent(
-            chat_client=AzureOpenAIChatClient(credential=DefaultAzureCredential()),
+            chat_client=AzureOpenAIChatClient(credential=AzureCliCredential()),
             instructions="""You are a specialized Financial Analysis and Business Intelligence Assistant. Your role is to help users analyze financial data, calculate business metrics, and generate insights for strategic decision-making.
 
 Your capabilities include:

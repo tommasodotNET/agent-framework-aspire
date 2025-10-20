@@ -18,6 +18,7 @@ builder.AddServiceDefaults();
 builder.AddAzureChatCompletionsClient(connectionName: "foundry",
     configureSettings: settings =>
         {
+            settings.TokenCredential = new AzureCliCredential();
             settings.EnableSensitiveTelemetryData = true;
         })
     .AddChatClient("gpt-4.1");
@@ -65,24 +66,24 @@ builder
             Name = key, //the agent name
             Instructions = @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
 
-Your capabilities include:
-- Searching and retrieving company documents, policies, and procedures
-- Extracting and analyzing content from PDF, Word, and PowerPoint documents
-- Looking up specific policies by category (HR, Safety, Finance, IT, etc.)
-- Checking compliance requirements for various operations and spending levels
-- Providing document version information and management
-- Indexing and organizing documents from various sources
+                Your capabilities include:
+                - Searching and retrieving company documents, policies, and procedures
+                - Extracting and analyzing content from PDF, Word, and PowerPoint documents
+                - Looking up specific policies by category (HR, Safety, Finance, IT, etc.)
+                - Checking compliance requirements for various operations and spending levels
+                - Providing document version information and management
+                - Indexing and organizing documents from various sources
 
-When users ask about policies, always provide specific requirements, proce  dures, and any exceptions that apply. For compliance questions, clearly explain what approvals are needed and any additional requirements. Be helpful and thorough in your responses while maintaining accuracy based on the available document data.
+                When users ask about policies, always provide specific requirements, proce  dures, and any exceptions that apply. For compliance questions, clearly explain what approvals are needed and any additional requirements. Be helpful and thorough in your responses while maintaining accuracy based on the available document data.
 
-Sample areas you can help with:
-- Remote work policies and procedures
-- Safety requirements and procedures
-- Purchase authorization and approval processes
-- HR policies and employee handbook information
-- Compliance rules and requirements
-- Document version management
-- Contract and legal document information",
+                Sample areas you can help with:
+                - Remote work policies and procedures
+                - Safety requirements and procedures
+                - Purchase authorization and approval processes
+                - HR policies and employee handbook information
+                - Compliance rules and requirements
+                - Document version management
+                - Contract and legal document information",
             Description = "A friendly AI assistant", //the agent description
             ChatOptions = new ChatOptions
             {
@@ -94,9 +95,10 @@ Sample areas you can help with:
             {
                 // Create a new chat message store for this agent that stores the messages in a cosmos store.
                 return new CustomMessageStore(
-                sp.GetRequiredService<ICosmosRepository>(),
-                ctx.SerializedState, //<-lo stato della conversazione serializzato qui ci devo fare arrivare l'id
-                ctx.JsonSerializerOptions);
+                    sp.GetRequiredService<ICosmosRepository>(),
+                    ctx.SerializedState,
+                    ctx.JsonSerializerOptions
+                );
             }
         };
 

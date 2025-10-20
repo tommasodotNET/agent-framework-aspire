@@ -3,17 +3,27 @@
  * Licensed under the MIT License.
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 html,
 body {
   margin: 0;
   padding: 0;
   height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #333;
 }
 
 .appContainer {
   display: flex;
   margin: 0;
-  padding: 0;
+  padding: 20px;
   height: 100vh;
-  overflow: auto;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
 }
