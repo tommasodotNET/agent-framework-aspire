@@ -341,6 +341,7 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
                 <div className={styles.inputContainer}>
                     <TextareaAutosize
                         id={inputId}
+                        className={styles.inputField}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {

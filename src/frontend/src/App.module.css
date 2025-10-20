@@ -18,7 +18,7 @@ body {
 .appContainer {
   display: flex;
   margin: 0;
-  padding: 20px;
+  padding: 0;
   height: 100vh;
   overflow: hidden;
   box-sizing: border-box;
