@@ -80,13 +80,17 @@ src/
 ├── agents-python/              # Python API for RAG
 │   ├── services/               # Services for Python Agent
 │   └── tools/                  # Tools for Python Agent
-├── agents-dotnet/              # .NET Agent API
-│   ├── services/               # Services for .NET Agent
-│   └── tools/                  # Tools for .NET Agent
-├── groupchat-dotnet/           # .NET Group Chat API
+├── agents-dotnet/              # dotnet Agent API
+│   ├── services/               # Services for dotnet Agent
+│   └── tools/                  # Tools for dotnet Agent
+├── groupchat-dotnet/           # dotnet Group Chat API
+├── mcp-server-dotnet/          # dotnet MCP Server
+├── custom-workflow-python/     # Custom Python Workflow
 ├── apphost/                    # Aspire App Host
-├── apphost-singlefile/         # Aspire App Host
-└── servicedefaults/            # Default configurations for services
+├── apphost-singlefile/         # Aspire App Host (Single File)
+└── service-defaults/           # Default configurations for services
+test/
+└── agents-dotnet-tests/        # Test project for dotnet agent
 ```
 
 ## .NET Agent
@@ -120,7 +124,7 @@ While these questions will invoke local tools:
 
 ## Python Agent
 
-Is a Python-based agent hosted in a uv application. Please note uv is supported by Aspire in the [Community Toolkit](https://learn.microsoft.com/en-us/dotnet/aspire/community-toolkit/hosting-python-extensions?tabs=dotnet-cli%2Cuv).
+Is a Python-based agent hosted in a uv-based uvicorn application.
 
 Role: Financial analysis, reporting, and business metrics Local Tools (methods returning mocked data):
 
@@ -150,6 +154,10 @@ Is a .NET-based group chat that creates a local agent with the same capabilities
 
 Sample Questions:
 - According to our procurement policy, what vendors are we required to use for office supplies, and what has been our spending pattern with those vendors over the past 6 months?
+
+## Python Custom Workflow 
+
+This is a custom workflow written in python that implements a custom flow using both dotnet and python agent via A2A. It can be easily invoked with a hardcoded prompt for convenience from the Aspire dashboard.
 
 ## Test project
 
