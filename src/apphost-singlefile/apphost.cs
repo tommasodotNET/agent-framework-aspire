@@ -4,8 +4,8 @@
 #:package Aspire.Hosting.Azure.CosmosDB@9.6.0-preview.1.25471.2
 #:package Aspire.Hosting.Azure.Search@9.6.0-preview.1.25471.2
 #:package Aspire.Hosting.NodeJs@9.6.0-preview.1.25471.2
+#:package Aspire.Hosting.Python@13.0.0-preview.1.25519.5
 #:package CommunityToolkit.Aspire.Hosting.NodeJS.Extensions@9.8.0-beta.376
-#:package CommunityToolkit.Aspire.Hosting.Python.Extensions@9.8.0-beta.376
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -45,36 +45,35 @@ var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dot
     .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithUrls((e) =>
     {
-        e.Urls.Add(new() { Url = "/agenta2a/v1/card", DisplayText = "🤖A2A Card", Endpoint = e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/agenta2a/v1/card", DisplayText = "🤖A2A Card", Endpoint = e.GetEndpoint("https") });
     });
 
 #pragma warning disable ASPIREHOSTINGPYTHON001
-var pythonAgent = builder.AddUvApp("pythonagent", "../agents-python", "start")
+var pythonAgent = builder.AddPythonModule("pythonagent", "../agents-python", "agents_python.main")
+    .WithUvEnvironment()
     .WithHttpEndpoint(env: "PORT")
     .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingFoundryName}.openai.azure.com/")
     .WithEnvironment("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", "gpt-4.1")
     .WithEnvironment("OTEL_PYTHON_CONFIGURATOR", "configurator")
-    .WithOtlpExporter()
-    .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true")
     .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithUrls((e) =>
     {
         e.Urls.Add(new() { Url = "/agenta2a/v1/card", DisplayText = "🤖A2A Card", Endpoint = e.GetEndpoint("http") });
     });
 
-var pythonCustomWorkflow = builder.AddUvApp("pythonCustomWorkflow", "../custom-workflow-python", "start")
+var pythonCustomWorkflow = builder.AddPythonModule("pythonCustomWorkflow", "../custom-workflow-python", "custom_workflow_python.main")
+    .WithUvEnvironment()
     .WithHttpEndpoint(env: "PORT")
     .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingFoundryName}.openai.azure.com/")
     .WithEnvironment("AZURE_OPENAI_CHAT_DEPLOYMENT_NAME", "gpt-4.1")
     .WithEnvironment("OTEL_PYTHON_CONFIGURATOR", "configurator")
-    .WithOtlpExporter()
     .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE", "true")
     .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithReference(dotnetAgent).WaitFor(dotnetAgent)
     .WithReference(pythonAgent).WaitFor(pythonAgent)
     .WithUrls((e) =>
     {
-        e.Urls.Add(new() { Url = "/analyze", DisplayText = "🤖Custom Workflow", Endpoint = e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/analyze", DisplayText = "🤖Custom Workflow", Endpoint = e.GetEndpoint("https") });
     });
 
 var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
@@ -86,7 +85,7 @@ var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet
     .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithUrls((e) =>
     {
-        e.Urls.Add(new() { Url = "/agent/chat", DisplayText = "🤖Group Chat", Endpoint = e.GetEndpoint("http") });
+        e.Urls.Add(new() { Url = "/agent/chat", DisplayText = "🤖Group Chat", Endpoint = e.GetEndpoint("https") });
     });
 
 var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
