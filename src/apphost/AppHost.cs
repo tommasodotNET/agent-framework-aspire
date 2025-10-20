@@ -64,7 +64,7 @@ var pythonCustomWorkflow = builder.AddPythonModule("pythonCustomWorkflow", "../c
     .WithReference(pythonAgent).WaitFor(pythonAgent)
     .WithUrls((e) =>
     {
-        e.Urls.Add(new() { Url = "/analyze", DisplayText = "🤖Custom Workflow", Endpoint = e.GetEndpoint("https") });
+        e.Urls.Add(new() { Url = "/analyze", DisplayText = "🤖Custom Workflow", Endpoint = e.GetEndpoint("http") });
     });
 
 var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet/GroupChat.Dotnet.csproj")
