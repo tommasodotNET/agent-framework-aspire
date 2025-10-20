@@ -1,4 +1,4 @@
-# A2A Agent Integration Documentation
+# Custom Workflow Description
 
 ## Overview
 
@@ -22,43 +22,6 @@ This custom workflow implementation demonstrates how to integrate A2A (Agent-to-
                        │ (Mock - Always  │
                        │ Returns "OK")   │
                        └─────────────────┘
-```
-
-## A2A Agent Configuration
-
-### Environment Variables
-
-Set the following environment variables to configure A2A agent endpoints:
-
-```bash
-# Financial analysis agent endpoint (Python agent)
-FINANCIAL_AGENT_HOST=http://services__pythonagent__http__0
-
-# Policy/Document lookup agent endpoint (.NET agent)  
-POLICY_AGENT_HOST=http://services__dotnetagent__http__0
-
-# Note: Compliance agent is mocked - always returns "compliant" status
-# COMPLIANCE_AGENT_HOST not needed
-```
-
-### Agent Card Requirements
-
-Each A2A agent must expose an Agent Card at `/.well-known/agent.json` with the following structure:
-
-```json
-{
-  "name": "Financial Analysis Agent",
-  "description": "Analyzes financial data and business metrics",
-  "version": "1.0.0",
-  "capabilities": [
-    "financial-analysis",
-    "revenue-analysis", 
-    "business-metrics"
-  ],
-  "endpoints": {
-    "chat": "/v1/chat"
-  }
-}
 ```
 
 ## Workflow Flow
@@ -125,51 +88,3 @@ Each A2A agent must expose an Agent Card at `/.well-known/agent.json` with the f
     "priority_areas": ["High-priority areas"]
 }
 ```
-
-## API Usage
-
-### Start the Service
-```bash
-uv run start
-```
-
-### Analyze Financial Compliance
-```bash
-curl -X POST http://localhost:8000/analyze \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "Analyze Q4 sales performance for enterprise products with policy compliance",
-    "period": "Q4 2024"
-  }'
-```
-
-### Health Check
-```bash
-curl http://localhost:8000/health
-```
-
-## Development Notes
-
-### Testing
-- Use `uv run python test_workflow.py` to test data models and routing logic
-- Mock A2A endpoints for local development
-- Integration tests require actual A2A-compliant agents
-
-### Extending the Workflow
-1. Add new data models for additional analysis types
-2. Create new executor functions for transformation logic
-3. Add edges to the workflow graph with appropriate conditions
-4. Configure additional A2A agent endpoints
-
-### Error Handling
-- HTTP client timeouts are set to 60 seconds
-- Fallback responses for A2A agent failures
-- Structured error logging for debugging
-
-## Production Considerations
-
-1. **Security**: Implement proper authentication for A2A endpoints
-2. **Monitoring**: Add telemetry and health checks for A2A agents
-3. **Resilience**: Implement retry logic and circuit breakers
-4. **Caching**: Cache agent cards and frequently accessed policies
-5. **Load Balancing**: Use multiple instances of A2A agents for scalability

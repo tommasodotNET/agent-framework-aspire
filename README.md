@@ -157,7 +157,7 @@ Sample Questions:
 
 ## Python Custom Workflow 
 
-This is a custom workflow written in python that implements a custom flow using both dotnet and python agent via A2A. It can be easily invoked with a hardcoded prompt for convenience from the Aspire dashboard.
+This is a custom workflow written in python that implements a custom flow using both dotnet and python agent via A2A. It can be easily invoked with a hardcoded prompt for convenience from the Aspire dashboard. The workflow is described [here](./src/custom-workflow-python/custom-workflow-description.md)
 
 ## Test project
 
