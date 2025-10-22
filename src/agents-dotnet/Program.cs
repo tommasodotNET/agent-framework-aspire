@@ -155,11 +155,9 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management
 
 app.MapDefaultEndpoints();
 
-var agent = app.Services.GetKeyedService<AIAgent>("document-management-agent");
-
 app.MapA2A("document-management-agent", "/agenta2a", new AgentCard
 {
-    Name = agent!.Name!,
+    Name = "document-management-agent",
     Url = "http://localhost:5196/agenta2a",
     Description = "Document Management and Policy Compliance Assistant",
     Version = "1.0",

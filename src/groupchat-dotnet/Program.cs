@@ -104,6 +104,7 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("group-chat")] AIAge
     {
         var message = request.Messages.LastOrDefault();
 
+        // we can't yet assign a custom message store to a workflow-as-agent: https://github.com/microsoft/agent-framework/issues/1573
         // //let's create a CustomConversationState
         // CustomConversationState conversationState = new() { Id = conversationId };
         // //let's serialize the conversationstate to pass it to our CustomMessageStore
