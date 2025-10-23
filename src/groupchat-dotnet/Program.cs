@@ -35,7 +35,7 @@ builder.AddAIAgent("financial-analysis-agent", (sp, key) =>
         BaseAddress = new Uri(Environment.GetEnvironmentVariable("services__pythonagent__https__0") ?? Environment.GetEnvironmentVariable("services__pythonagent__http__0")!),
         Timeout = TimeSpan.FromSeconds(60)
     };
-    var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient, agentCardPath: "/agenta2a/v1/card");
+    var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient);
 
     return agentCardResolver.GetAIAgentAsync().GetAwaiter().GetResult();
 });

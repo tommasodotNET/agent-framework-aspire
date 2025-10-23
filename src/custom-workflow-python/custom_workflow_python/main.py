@@ -271,7 +271,7 @@ async def create_financial_agent(http_client: httpx.AsyncClient) -> A2AAgent:
     financial_agent_host = os.getenv("services__pythonagent__http__0")
     
     resolver = A2ACardResolver(httpx_client=http_client, base_url=financial_agent_host)
-    agent_card = await resolver.get_agent_card(relative_card_path="/agenta2a/v1/card")
+    agent_card = await resolver.get_agent_card(relative_card_path="/.well-known/agent-card.json")
     
     return A2AAgent(
         name=agent_card.name or "Financial Analysis Agent",
