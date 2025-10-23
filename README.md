@@ -29,13 +29,6 @@ To allow Aspire to create or reference existing resources on Azure (e.g. Foundry
 }
 ```
 
-If you want to run the Python agent alongside the .NET agent, you need to install the dependencies using uv:
-
-```bash
-cd src/agents-python
-uv sync --prerelease=allow
-```
-
 Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample.
 
 Powershell:
