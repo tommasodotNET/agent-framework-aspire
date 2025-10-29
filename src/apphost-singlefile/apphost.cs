@@ -1,10 +1,10 @@
-#:sdk Aspire.AppHost.Sdk@9.6.0-preview.1.25476.6
-#:package Aspire.Hosting.AppHost@9.6.0-preview.1.25471.2
-#:package Aspire.Hosting.Azure.AIFoundry@13.0.0-preview.1.25502.4
-#:package Aspire.Hosting.Azure.CosmosDB@9.6.0-preview.1.25471.2
-#:package Aspire.Hosting.Azure.Search@9.6.0-preview.1.25471.2
-#:package Aspire.Hosting.NodeJs@9.6.0-preview.1.25471.2
-#:package Aspire.Hosting.Python@13.0.0-preview.1.25519.5
+#:sdk Aspire.AppHost.Sdk@13.0.0-preview.1.25529.4
+#:package Aspire.Hosting.AppHost@13.0.0-preview.1.25529.4
+#:package Aspire.Hosting.Azure.AIFoundry@13.0.0-preview.1.25529.4
+#:package Aspire.Hosting.Azure.CosmosDB@13.0.0-preview.1.25529.4
+#:package Aspire.Hosting.Azure.Search@13.0.0-preview.1.25529.4
+#:package Aspire.Hosting.NodeJs@13.0.0-preview.1.25529.4
+#:package Aspire.Hosting.Python@13.0.0-preview.1.25529.4
 #:package CommunityToolkit.Aspire.Hosting.NodeJS.Extensions@9.8.0-beta.376
 
 var builder = DistributedApplication.CreateBuilder(args);

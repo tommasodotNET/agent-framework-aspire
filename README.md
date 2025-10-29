@@ -1,6 +1,6 @@
 # Agent Framework Aspire
 
-This repository contains a sample implementation of the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework/) using [Aspire](https://github.com/dotnet/aspire/), demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
+This repository contains a sample implementation of the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework/) using [Aspire](https://aspire.dev/), demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
 
 ## Features
 
@@ -16,7 +16,7 @@ This repository contains a sample implementation of the [Microsoft Agent Framewo
 
 ## Run the sample
 
-> This sample requires .Net 10 Preview SDK and Python 3.11+ installed on your machine.
+> This sample requires latest .Net 10 Preview SDK (RC2) and Python 3.11+ installed on your machine.
 
 To allow Aspire to create or reference existing resources on Azure (e.g. Foundry), you need to configure Azure settings in the [appsettings.json](./src/apphost/appsettings.json) file:
 
@@ -33,8 +33,7 @@ Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to
 
 Powershell:
 ```bash
-Invoke-RestMethod https://aspire.dev/install.ps1 -OutFile aspire-install.ps1
-./aspire-install.ps1 -q dev
+iex "& { $(irm https://aspire.dev/install.ps1) } --InstallExtension --Quality dev"
 
 aspire run
 ```
@@ -42,7 +41,7 @@ aspire run
 Bash:
 ```bash
 curl -sSL https://aspire.dev/install.sh -o aspire-install.sh
-./aspire-install.sh -q dev
+./aspire-install.sh --InstallExtension --Quality dev
 
 aspire run
 ```
@@ -51,7 +50,7 @@ To ease the debug experience, you can use the [Aspire extension for Visual Studi
 
 ### Aspire single-file AppHost
 
-This sample can be use with single-file AppHost. Change the aspire configuration in the [.aspire/settings.json](./.aspire/settings.json) file to point to the [apphost.cs](./src/apphost-singlefile/apphost.cs) file:
+This sample can uses single-file AppHost. Change the aspire configuration in the [.aspire/settings.json](./.aspire/settings.json) file to point to the [apphost.csproj](./src/apphost/AppHost.csproj) file:
 
 ```json
 {
@@ -59,11 +58,11 @@ This sample can be use with single-file AppHost. Change the aspire configuration
     "singlefileAppHostEnabled": "true",
     "minimumSdkCheckEnabled": "false"
   },
-  "appHostPath": "../src/apphost-singlefile/apphost.cs"
+  "appHostPath": "../src/apphost/AppHost.csproj"
 }
 ```
 
-Then run the sample as usual with `aspire run`.
+Then run the sample as usual with `aspire run` or using Aspire Extension for VS Code.
 
 ## Folder Structure
 
