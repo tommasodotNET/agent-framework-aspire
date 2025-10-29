@@ -2,7 +2,7 @@ using Azure.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
 using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Hosting.A2A.AspNetCore;
+using Microsoft.Agents.AI.Hosting.A2A;
 using Microsoft.Agents.AI.Hosting;
 using Agents.Dotnet.Models.UI;
 using Agents.Dotnet.Services;

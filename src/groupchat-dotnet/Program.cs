@@ -55,7 +55,7 @@ builder.AddAIAgent("group-chat", (sp, key) =>
             .AddParticipants(documentAgent, financialAgent)
             .Build();
 
-    return workflow.AsAgentAsync(name: key).GetAwaiter().GetResult();
+    return workflow.AsAgent(name: key);
 });
 
 var app = builder.Build();

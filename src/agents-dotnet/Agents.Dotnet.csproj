@@ -10,12 +10,12 @@
     <PackageReference Include="Aspire.Azure.AI.Inference" Version="13.0.0-preview.1.25519.5" />
     <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" Version="13.0.0-preview.1.25519.5" />
     <PackageReference Include="Azure.Identity" Version="1.16.0" />
-    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251016.1" />
-    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251016.1" />
-    <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.0.0-preview.251016.1" />
-    <PackageReference Include="Microsoft.Agents.AI.Hosting" Version="1.0.0-preview.251016.1" />
-    <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A" Version="1.0.0-preview.251016.1" />
-    <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="1.0.0-preview.251016.1" />
+    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251028.1" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251028.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.0.0-preview.251028.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting" Version="1.0.0-preview.251028.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A" Version="1.0.0-preview.251028.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="1.0.0-preview.251028.1" />
     <PackageReference Include="ModelContextProtocol" Version="0.4.0-preview.1" />
   </ItemGroup>
 
