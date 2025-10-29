@@ -78,8 +78,8 @@ src/
 ├── groupchat-dotnet/           # dotnet Group Chat API
 ├── mcp-server-dotnet/          # dotnet MCP Server
 ├── custom-workflow-python/     # Custom Python Workflow
-├── apphost/                    # Aspire App Host
-├── apphost-singlefile/         # Aspire App Host (Single File)
+├── apphost/                    # Aspire App Host (Legacy)
+├── aspire/                     # Aspire App Host (Single File)
 └── service-defaults/           # Default configurations for services
 test/
 └── agents-dotnet-tests/        # Test project for dotnet agent
