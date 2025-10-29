@@ -3,5 +3,5 @@
     "singlefileAppHostEnabled": "true",
     "minimumSdkCheckEnabled": "false"
   },
-  "appHostPath": "../src/apphost-singlefile/apphost.cs"
+  "appHostPath": "../src/aspire/apphost.cs"
 }
