@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Azure.AI.Inference" Version="13.0.0-preview.1.25529.4" />
-    <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" Version="13.0.0-preview.1.25529.4" />
+    <PackageReference Include="Aspire.Azure.AI.Inference" Version="13.0.0-preview.1.25531.3" />
+    <PackageReference Include="Aspire.Microsoft.Azure.Cosmos" Version="13.0.0-preview.1.25531.3" />
     <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251028.1" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251028.1" />
     <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.0.0-preview.251028.1" />

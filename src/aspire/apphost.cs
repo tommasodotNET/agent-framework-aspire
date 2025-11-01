@@ -1,16 +1,18 @@
-#:sdk Aspire.AppHost.Sdk@13.0.0-preview.1.25529.4
-#:package Aspire.Hosting.AppHost@13.0.0-preview.1.25529.4
-#:package Aspire.Hosting.Azure.AIFoundry@13.0.0-preview.1.25529.4
-#:package Aspire.Hosting.Azure.CosmosDB@13.0.0-preview.1.25529.4
-#:package Aspire.Hosting.Azure.Search@13.0.0-preview.1.25529.4
-#:package Aspire.Hosting.NodeJs@13.0.0-preview.1.25529.4
-#:package Aspire.Hosting.Python@13.0.0-preview.1.25529.4
-#:package CommunityToolkit.Aspire.Hosting.NodeJS.Extensions@9.8.0-beta.376
+﻿#:sdk Aspire.AppHost.Sdk@13.1.0-preview.1.25551.2
+#:package Aspire.Hosting.AppHost@13.1.0-preview.1.25551.2
+#:package Aspire.Hosting.Azure.AIFoundry@13.1.0-preview.1.25551.2
+#:package Aspire.Hosting.Azure.CosmosDB@13.1.0-preview.1.25551.2
+#:package Aspire.Hosting.Azure.Search@13.1.0-preview.1.25551.2
+#:package Aspire.Hosting.NodeJs@13.1.0-preview.1.25551.2
+#:package Aspire.Hosting.Python@13.1.0-preview.1.25551.2
+#:package Aspire.Hosting.Yarp@13.1.0-preview.1.25551.2
+#:package Aspire.Hosting.Azure.AppContainers@13.1.0-preview.1.25551.2
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-var tenantId = builder.AddParameter("TenantId")
-    .WithDescription("The Azure tenant ID for authentication.");
+builder.AddAzureContainerAppEnvironment("aca");
+
+var tenantId = builder.AddParameterFromConfiguration("tenant", "Azure:TenantId");
 var existingFoundryName = builder.AddParameter("existingFoundryName")
     .WithDescription("The name of the existing Azure Foundry resource.");
 var existingFoundryResourceGroup = builder.AddParameter("existingFoundryResourceGroup")
@@ -90,16 +92,18 @@ var dotnetGroupChat = builder.AddProject("dotnetgroupchat", "../groupchat-dotnet
         e.Urls.Add(new() { Url = "/agent/chat", DisplayText = "🤖Group Chat", Endpoint = e.GetEndpoint("https") });
     });
 
-var frontend = builder.AddNpmApp("frontend", "../frontend", "dev")
-    .WithNpmPackageInstallation()
+var frontend = builder.AddViteApp("frontend", "../frontend")
     .WithReference(dotnetAgent).WaitFor(dotnetAgent)
     .WithReference(pythonAgent).WaitFor(pythonAgent)
     .WithReference(dotnetGroupChat).WaitFor(dotnetGroupChat)
-    .WithHttpEndpoint(env: "PORT")
     .WithUrls((e) =>
     {
         e.Urls.Clear();
         e.Urls.Add(new() { Url = "/", DisplayText = "💬Chat", Endpoint = e.GetEndpoint("http") });
     });
+
+builder.AddYarp("yarp")
+    .WithExternalHttpEndpoints()
+    .PublishWithContainerFiles(frontend, "./static");
 
 builder.Build().Run();
