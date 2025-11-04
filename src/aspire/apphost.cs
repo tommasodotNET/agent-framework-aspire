@@ -12,7 +12,6 @@
 #:project ../agents-dotnet/Agents.Dotnet.csproj
 #:project ../groupchat-dotnet/GroupChat.Dotnet.csproj
 
-using Aspire.Hosting.Yarp;
 using Aspire.Hosting.Yarp.Transforms;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -114,11 +113,14 @@ builder.AddYarp("yarp")
     .WithConfiguration(yarp =>
     {
         yarp.AddRoute("/agent/dotnet/{**catch-all}", dotnetAgent)
-            .WithTransformPathRemovePrefix("/dotnet");
+            .WithTransformPathRemovePrefix("/agent/dotnet")
+            .WithTransformPathPrefix("/agent");
         yarp.AddRoute("/agent/python/{**catch-all}", pythonAgent)
-            .WithTransformPathRemovePrefix("/python");
+            .WithTransformPathRemovePrefix("/agent/python")
+            .WithTransformPathPrefix("/agent");
         yarp.AddRoute("/agent/groupchat/{**catch-all}", dotnetGroupChat)
-            .WithTransformPathRemovePrefix("/groupchat");
+            .WithTransformPathRemovePrefix("/agent/groupchat")
+            .WithTransformPathPrefix("/agent");
     })
     .PublishWithStaticFiles(frontend);
 
