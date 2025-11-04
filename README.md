@@ -46,7 +46,7 @@ curl -sSL https://aspire.dev/install.sh -o aspire-install.sh
 aspire run
 ```
 
-To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.). Otherwise, you can use the [C# Dev Kit for Visual Studio Code](https://learn.microsoft.com/it-it/visualstudio/subscriptions/vs-c-sharp-dev-kit).
+To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.).
 
 ### Aspire single-file AppHost
 

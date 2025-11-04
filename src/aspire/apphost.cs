@@ -1,12 +1,16 @@
-﻿#:sdk Aspire.AppHost.Sdk@13.1.0-preview.1.25551.2
-#:package Aspire.Hosting.AppHost@13.1.0-preview.1.25551.2
-#:package Aspire.Hosting.Azure.AIFoundry@13.1.0-preview.1.25551.2
-#:package Aspire.Hosting.Azure.CosmosDB@13.1.0-preview.1.25551.2
-#:package Aspire.Hosting.Azure.Search@13.1.0-preview.1.25551.2
-#:package Aspire.Hosting.NodeJs@13.1.0-preview.1.25551.2
-#:package Aspire.Hosting.Python@13.1.0-preview.1.25551.2
-#:package Aspire.Hosting.Yarp@13.1.0-preview.1.25551.2
-#:package Aspire.Hosting.Azure.AppContainers@13.1.0-preview.1.25551.2
+﻿#:sdk Aspire.AppHost.Sdk@13.1.0-preview.1.25552.3
+#:package Aspire.Hosting.AppHost@13.1.0-preview.1.25552.3
+#:package Aspire.Hosting.Azure.AIFoundry@13.1.0-preview.1.25552.3
+#:package Aspire.Hosting.Azure.CosmosDB@13.1.0-preview.1.25552.3
+#:package Aspire.Hosting.Azure.Search@13.1.0-preview.1.25552.3
+#:package Aspire.Hosting.NodeJs@13.1.0-preview.1.25552.3
+#:package Aspire.Hosting.Python@13.1.0-preview.1.25552.3
+#:package Aspire.Hosting.Yarp@13.1.0-preview.1.25552.3
+#:package Aspire.Hosting.Azure.AppContainers@13.1.0-preview.1.25552.3
+
+#:project ../mcp-server-dotnet/McpServer.Dotnet.csproj
+#:project ../agents-dotnet/Agents.Dotnet.csproj
+#:project ../groupchat-dotnet/GroupChat.Dotnet.csproj
 
 var builder = DistributedApplication.CreateBuilder(args);
 
