@@ -114,11 +114,11 @@ builder.AddYarp("yarp")
     .WithConfiguration(yarp =>
     {
         yarp.AddRoute("/agent/dotnet/{**catch-all}", dotnetAgent)
-            .WithTransformPathPrefix("/agent");
+            .WithTransformPathRemovePrefix("/dotnet");
         yarp.AddRoute("/agent/python/{**catch-all}", pythonAgent)
-            .WithTransformPathPrefix("/agent");
+            .WithTransformPathRemovePrefix("/python");
         yarp.AddRoute("/agent/groupchat/{**catch-all}", dotnetGroupChat)
-            .WithTransformPathPrefix("/agent");
+            .WithTransformPathRemovePrefix("/groupchat");
     })
     .PublishWithStaticFiles(frontend);
 
