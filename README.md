@@ -22,6 +22,7 @@ To allow Aspire to create or reference existing resources on Azure (e.g. Foundry
 
 ```json
 "Azure": {
+  "TenantId": "<YOUR-TENANT-ID>",
   "SubscriptionId": "<YOUR-SUBSCRIPTION-ID>",
   "AllowResourceGroupCreation": false,
   "Location": "<YOUR-LOCATION>",
