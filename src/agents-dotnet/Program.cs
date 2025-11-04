@@ -18,7 +18,7 @@ builder.AddServiceDefaults();
 builder.AddAzureChatCompletionsClient(connectionName: "foundry",
     configureSettings: settings =>
         {
-            settings.TokenCredential = new AzureCliCredential();
+            settings.TokenCredential = new DefaultAzureCredential();
             settings.EnableSensitiveTelemetryData = true;
         })
     .AddChatClient("gpt-4.1");
