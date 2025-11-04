@@ -12,6 +12,9 @@
 #:project ../agents-dotnet/Agents.Dotnet.csproj
 #:project ../groupchat-dotnet/GroupChat.Dotnet.csproj
 
+using Aspire.Hosting.Yarp;
+using Aspire.Hosting.Yarp.Transforms;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 builder.AddAzureContainerAppEnvironment("aca");
@@ -108,6 +111,15 @@ var frontend = builder.AddViteApp("frontend", "../frontend")
 
 builder.AddYarp("yarp")
     .WithExternalHttpEndpoints()
-    .PublishWithContainerFiles(frontend, "./static");
+    .WithConfiguration(yarp =>
+    {
+        yarp.AddRoute("/agent/dotnet/{**catch-all}", dotnetAgent)
+            .WithTransformPathPrefix("/agent");
+        yarp.AddRoute("/agent/python/{**catch-all}", pythonAgent)
+            .WithTransformPathPrefix("/agent");
+        yarp.AddRoute("/chat/{**catch-all}", dotnetGroupChat)
+            .WithTransformPathPrefix("/agent");
+    })
+    .PublishWithStaticFiles(frontend);
 
 builder.Build().Run();
