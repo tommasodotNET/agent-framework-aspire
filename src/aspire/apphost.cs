@@ -117,7 +117,7 @@ builder.AddYarp("yarp")
             .WithTransformPathPrefix("/agent");
         yarp.AddRoute("/agent/python/{**catch-all}", pythonAgent)
             .WithTransformPathPrefix("/agent");
-        yarp.AddRoute("/chat/{**catch-all}", dotnetGroupChat)
+        yarp.AddRoute("/agent/groupchat/{**catch-all}", dotnetGroupChat)
             .WithTransformPathPrefix("/agent");
     })
     .PublishWithStaticFiles(frontend);
