@@ -32,7 +32,7 @@ builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>()
 builder.Services.AddSingleton<CosmosAgentThreadStore>();
 
 // Register MCP client as a singleton
-builder.Services.AddSingleton(async sp =>
+builder.Services.AddSingleton(sp =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var logger = sp.GetRequiredService<ILogger<Program>>();
@@ -50,7 +50,7 @@ builder.Services.AddSingleton(async sp =>
         Endpoint = mcpEndpoint
     });
     
-    return await McpClient.CreateAsync(transport);
+    return McpClient.CreateAsync(transport).Result;
 });
 
 builder.AddAIAgent("document-management-agent", (sp, key) =>
