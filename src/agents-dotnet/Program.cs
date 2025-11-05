@@ -26,7 +26,10 @@ builder.AddAzureChatCompletionsClient(connectionName: "foundry",
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<DocumentTools>();
 builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (option) => { option.Serializer = new CosmosSystemTextJsonSerializer(); });
-builder.Services.AddSingleton<ICosmosRepository, SampleCosmosRepository>();
+
+// Register Cosmos Thread Store services
+builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
+builder.Services.AddSingleton<CosmosAgentThreadStore>();
 
 // Register MCP client as a singleton
 builder.Services.AddSingleton(sp =>
@@ -50,66 +53,48 @@ builder.Services.AddSingleton(sp =>
     return McpClient.CreateAsync(transport).GetAwaiter().GetResult();
 });
 
-builder
-    .AddAIAgent("document-management-agent", (sp, key) =>
-    {
-        var instrumentedChatClient = sp.GetRequiredService<IChatClient>();
-        var documentTools = sp.GetRequiredService<DocumentTools>().GetFunctions();
-        var mcpClient = sp.GetRequiredService<McpClient>();
-        
-        // Retrieve the list of tools available on the MCP server
-        var mcpTools = mcpClient.ListToolsAsync().GetAwaiter().GetResult();
-        
-        ChatClientAgentOptions options = new ()
-        {
-            Id = Guid.NewGuid().ToString(), //the agent identifier
-            Name = key, //the agent name
-            Instructions = @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
+builder.AddAIAgent("document-management-agent", (sp, key) =>
+{
+    var instrumentedChatClient = sp.GetRequiredService<IChatClient>();
+    var documentTools = sp.GetRequiredService<DocumentTools>().GetFunctions();
+    var mcpClient = sp.GetRequiredService<McpClient>();
+    // Retrieve the list of tools available on the MCP server
+    var mcpTools = mcpClient.ListToolsAsync().GetAwaiter().GetResult();
 
-                Your capabilities include:
-                - Searching and retrieving company documents, policies, and procedures
-                - Extracting and analyzing content from PDF, Word, and PowerPoint documents
-                - Looking up specific policies by category (HR, Safety, Finance, IT, etc.)
-                - Checking compliance requirements for various operations and spending levels
-                - Providing document version information and management
-                - Indexing and organizing documents from various sources
+    var agent = instrumentedChatClient.CreateAIAgent(
+        instructions: @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
 
-                When users ask about policies, always provide specific requirements, proce  dures, and any exceptions that apply. For compliance questions, clearly explain what approvals are needed and any additional requirements. Be helpful and thorough in your responses while maintaining accuracy based on the available document data.
+            Your capabilities include:
+            - Searching and retrieving company documents, policies, and procedures
+            - Extracting and analyzing content from PDF, Word, and PowerPoint documents
+            - Looking up specific policies by category (HR, Safety, Finance, IT, etc.)
+            - Checking compliance requirements for various operations and spending levels
+            - Providing document version information and management
+            - Indexing and organizing documents from various sources
 
-                Sample areas you can help with:
-                - Remote work policies and procedures
-                - Safety requirements and procedures
-                - Purchase authorization and approval processes
-                - HR policies and employee handbook information
-                - Compliance rules and requirements
-                - Document version management
-                - Contract and legal document information",
-            Description = "A friendly AI assistant", //the agent description
-            ChatOptions = new ChatOptions
-            {
-                Tools = [.. documentTools,
-                    ..mcpTools.Cast<AITool>()],
-            },
-            
-            ChatMessageStoreFactory = ctx =>
-            {
-                // Create a new chat message store for this agent that stores the messages in a cosmos store.
-                return new CustomMessageStore(
-                    sp.GetRequiredService<ICosmosRepository>(),
-                    ctx.SerializedState,
-                    ctx.JsonSerializerOptions
-                );
-            }
-        };
+            When users ask about policies, always provide specific requirements, procedures, and any exceptions that apply. For compliance questions, clearly explain what approvals are needed and any additional requirements. Be helpful and thorough in your responses while maintaining accuracy based on the available document data.
 
-        var agent = new ChatClientAgent(instrumentedChatClient, options);
+            Sample areas you can help with:
+            - Remote work policies and procedures
+            - Safety requirements and procedures
+            - Purchase authorization and approval processes
+            - HR policies and employee handbook information
+            - Compliance rules and requirements
+            - Document version management
+            - Contract and legal document information",
+        description: "A friendly AI assistant",
+        name: key,
+        tools: [.. documentTools,
+                ..mcpTools.Cast<AITool>()]
+    );
 
-        return agent;
-    });
+    return agent;
+}).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 
 var app = builder.Build();
 
 app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management-agent")] AIAgent agent,
+    [FromKeyedServices("document-management-agent")] AgentThreadStore threadStore,
     [FromBody] AIChatRequest request,
     [FromServices] ILogger<Program> logger,
     HttpResponse response) =>
@@ -130,24 +115,18 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management
     {
         var message = request.Messages.LastOrDefault();
 
-        //let's create a CustomConversationState
-        CustomConversationState conversationState = new() { Id = conversationId };
-        //let's serialize the conversationstate to pass it to our CustomMessageStore
-        var serializedState = conversationState.Serialize();
-        //resume the thread with our CustomMessageStore
-        AgentThread resumedThread = agent.DeserializeThread(serializedState);
+        var thread = await threadStore.GetThreadAsync(agent, conversationId);
 
         var chatMessage = new ChatMessage(ChatRole.User, message.Content);
 
         //before invoking the agent MAF automatically calls the GetMessagesAsync of our CustomMessageStore
-        await foreach (var update in agent.RunStreamingAsync(chatMessage, resumedThread))
+        await foreach (var update in agent.RunStreamingAsync(chatMessage, thread))
         {
             await response.WriteAsync($"{JsonSerializer.Serialize(new AIChatCompletionDelta(new AIChatMessageDelta() { Content = update.Text }))}\r\n");
             await response.Body.FlushAsync();
         }
 
-        //when the agent has finished MAF automatically calls the AddMessagesAsync of our CustomMessageStore
-
+        await threadStore.SaveThreadAsync(agent, conversationId, thread);
     }
 
     return;
