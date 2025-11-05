@@ -25,41 +25,35 @@ builder.AddAzureChatCompletionsClient(connectionName: "foundry",
 
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<DocumentTools>();
-builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (option) => { option.Serializer = new CosmosSystemTextJsonSerializer(); });
+builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
 
 // Register Cosmos Thread Store services
 builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
 builder.Services.AddSingleton<CosmosAgentThreadStore>();
 
-// Register MCP client as a singleton
-builder.Services.AddSingleton(sp =>
+var mcpServerUrl = Environment.GetEnvironmentVariable("services__mcpserver__https__0") 
+       ?? Environment.GetEnvironmentVariable("services__mcpserver__http__0")!;
+
+// Append the MCP endpoint path
+var mcpEndpoint = new Uri(new Uri(mcpServerUrl), "/mcp");
+
+var transport = new HttpClientTransport(new HttpClientTransportOptions
 {
-    var configuration = sp.GetRequiredService<IConfiguration>();
-    var logger = sp.GetRequiredService<ILogger<Program>>();
-    
-    var mcpServerUrl = Environment.GetEnvironmentVariable("services__mcpserver__https__0") 
-           ?? Environment.GetEnvironmentVariable("services__mcpserver__http__0")!;
-    
-    // Append the MCP endpoint path
-    var mcpEndpoint = new Uri(new Uri(mcpServerUrl), "/mcp");
-    
-    logger.LogInformation("Connecting to MCP server at {McpEndpoint}", mcpEndpoint);
-    
-    var transport = new HttpClientTransport(new HttpClientTransportOptions
-    {
-        Endpoint = mcpEndpoint
-    });
-    
-    return McpClient.CreateAsync(transport).Result;
+    Endpoint = mcpEndpoint
 });
+
+var mcpClient = await McpClient.CreateAsync(transport);
+
+// Retrieve the list of tools available on the MCP server
+var mcpTools = await mcpClient.ListToolsAsync();
+
+// Register MCP client as a singleton
+builder.Services.AddSingleton(mcpClient);
 
 builder.AddAIAgent("document-management-agent", (sp, key) =>
 {
     var instrumentedChatClient = sp.GetRequiredService<IChatClient>();
     var documentTools = sp.GetRequiredService<DocumentTools>().GetFunctions();
-    var mcpClient = sp.GetRequiredService<McpClient>();
-    // Retrieve the list of tools available on the MCP server
-    var mcpTools = mcpClient.ListToolsAsync().Result;
 
     var agent = instrumentedChatClient.CreateAIAgent(
         instructions: @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
