@@ -32,7 +32,7 @@ builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>()
 builder.Services.AddSingleton<CosmosAgentThreadStore>();
 
 // Register MCP client as a singleton
-builder.Services.AddSingleton(sp =>
+builder.Services.AddSingleton(async sp =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var logger = sp.GetRequiredService<ILogger<Program>>();
@@ -50,7 +50,7 @@ builder.Services.AddSingleton(sp =>
         Endpoint = mcpEndpoint
     });
     
-    return McpClient.CreateAsync(transport).GetAwaiter().GetResult();
+    return await McpClient.CreateAsync(transport);
 });
 
 builder.AddAIAgent("document-management-agent", (sp, key) =>
@@ -59,7 +59,7 @@ builder.AddAIAgent("document-management-agent", (sp, key) =>
     var documentTools = sp.GetRequiredService<DocumentTools>().GetFunctions();
     var mcpClient = sp.GetRequiredService<McpClient>();
     // Retrieve the list of tools available on the MCP server
-    var mcpTools = mcpClient.ListToolsAsync().GetAwaiter().GetResult();
+    var mcpTools = mcpClient.ListToolsAsync().Result;
 
     var agent = instrumentedChatClient.CreateAIAgent(
         instructions: @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.

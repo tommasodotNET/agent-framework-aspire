@@ -29,7 +29,7 @@ builder.AddAIAgent("document-management-agent", (sp, key) =>
     };
     var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient, agentCardPath: "/agenta2a/v1/card");
 
-    return agentCardResolver.GetAIAgentAsync().GetAwaiter().GetResult();
+    return agentCardResolver.GetAIAgentAsync().Result;
 });
 
 builder.AddAIAgent("financial-analysis-agent", (sp, key) =>
@@ -41,7 +41,7 @@ builder.AddAIAgent("financial-analysis-agent", (sp, key) =>
     };
     var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient, agentCardPath: "/agenta2a/v1/card");
 
-    return agentCardResolver.GetAIAgentAsync().GetAwaiter().GetResult();
+    return agentCardResolver.GetAIAgentAsync().Result;
 });
 
 builder.AddAIAgent("group-chat", (sp, key) =>
