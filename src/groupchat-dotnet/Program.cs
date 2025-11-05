@@ -20,29 +20,26 @@ builder.Services.AddSingleton<ICosmosRepository, SampleCosmosRepository>();
 builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
 builder.Services.AddSingleton<CosmosAgentThreadStore>();
 
-builder.AddAIAgent("document-management-agent", (sp, key) =>
+var dotnetHttpClient = new HttpClient()
 {
-    var httpClient = new HttpClient()
-    {
-        BaseAddress = new Uri(Environment.GetEnvironmentVariable("services__dotnetagent__https__0") ?? Environment.GetEnvironmentVariable("services__dotnetagent__http__0")!),
-        Timeout = TimeSpan.FromSeconds(60)
-    };
-    var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient, agentCardPath: "/agenta2a/v1/card");
+    BaseAddress = new Uri(Environment.GetEnvironmentVariable("services__dotnetagent__https__0") ?? Environment.GetEnvironmentVariable("services__dotnetagent__http__0")!),
+    Timeout = TimeSpan.FromSeconds(60)
+};
+var dotnetAgentCardResolver = new A2ACardResolver(dotnetHttpClient.BaseAddress!, dotnetHttpClient, agentCardPath: "/agenta2a/v1/card");
 
-    return agentCardResolver.GetAIAgentAsync().Result;
-});
+var documentManagementAgent = dotnetAgentCardResolver.GetAIAgentAsync().Result;
+builder.AddAIAgent("document-management-agent", (sp, key) => documentManagementAgent);
 
-builder.AddAIAgent("financial-analysis-agent", (sp, key) =>
+var pythonHttpClient = new HttpClient()
 {
-    var httpClient = new HttpClient()
-    {
-        BaseAddress = new Uri(Environment.GetEnvironmentVariable("services__pythonagent__https__0") ?? Environment.GetEnvironmentVariable("services__pythonagent__http__0")!),
-        Timeout = TimeSpan.FromSeconds(60)
-    };
-    var agentCardResolver = new A2ACardResolver(httpClient.BaseAddress!, httpClient, agentCardPath: "/agenta2a/v1/card");
+    BaseAddress = new Uri(Environment.GetEnvironmentVariable("services__pythonagent__https__0") ?? Environment.GetEnvironmentVariable("services__pythonagent__http__0")!),
+    Timeout = TimeSpan.FromSeconds(60)
+};
+var pythonAgentCardResolver = new A2ACardResolver(pythonHttpClient.BaseAddress!, pythonHttpClient, agentCardPath: "/agenta2a/v1/card");
 
-    return agentCardResolver.GetAIAgentAsync().Result;
-});
+var financialAnalysisAgent = pythonAgentCardResolver.GetAIAgentAsync().Result;
+
+builder.AddAIAgent("financial-analysis-agent", (sp, key) => financialAnalysisAgent);
 
 builder.AddAIAgent("group-chat", (sp, key) =>
 {
