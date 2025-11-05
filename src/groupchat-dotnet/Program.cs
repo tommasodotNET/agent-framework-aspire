@@ -16,6 +16,10 @@ builder.AddServiceDefaults();
 builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (option) => { option.Serializer = new CosmosSystemTextJsonSerializer(); });
 builder.Services.AddSingleton<ICosmosRepository, SampleCosmosRepository>();
 
+// Register Cosmos Thread Store services
+builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
+builder.Services.AddSingleton<CosmosAgentThreadStore>();
+
 builder.AddAIAgent("document-management-agent", (sp, key) =>
 {
     var httpClient = new HttpClient()
@@ -56,7 +60,7 @@ builder.AddAIAgent("group-chat", (sp, key) =>
             .Build();
 
     return workflow.AsAgent(name: key);
-});
+}).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 
 var app = builder.Build();
 
@@ -84,6 +88,7 @@ app.MapGet("/agent/chat", async ([FromKeyedServices("group-chat")] AIAgent group
 });
 
 app.MapPost("/agent/chat/stream", async ([FromKeyedServices("group-chat")] AIAgent agent,
+    [FromKeyedServices("group-chat")] AgentThreadStore threadStore,
     [FromBody] AIChatRequest request,
     [FromServices] ILogger<Program> logger,
     HttpResponse response) =>
@@ -104,41 +109,17 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("group-chat")] AIAge
     {
         var message = request.Messages.LastOrDefault();
 
-        // we can't yet assign a custom message store to a workflow-as-agent: https://github.com/microsoft/agent-framework/issues/1573
-        // //let's create a CustomConversationState
-        // CustomConversationState conversationState = new() { Id = conversationId };
-        // //let's serialize the conversationstate to pass it to our CustomMessageStore
-        // var serializedState = conversationState.Serialize();
-        // //resume the thread with our CustomMessageStore
-        // AgentThread resumedThread = agent.DeserializeThread(serializedState);
+        var thread = await threadStore.GetThreadAsync(agent, conversationId);
 
         var chatMessage = new ChatMessage(ChatRole.User, message.Content);
-        
-        try
+
+        await foreach (var update in agent.RunStreamingAsync(chatMessage, thread))
         {
-            var result = await agent.RunAsync(chatMessage);
-            
-            // Stream the response back token by token
-            var responseText = result.Text ?? "";
-            var words = responseText.Split(' ');
-            
-            foreach (var word in words)
-            {
-                await response.WriteAsync($"{JsonSerializer.Serialize(new AIChatCompletionDelta(new AIChatMessageDelta() { Content = word + " " }))}\r\n");
-                await response.Body.FlushAsync();
-                await Task.Delay(50); // Small delay for streaming effect
-            }
-            
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error running group chat agent");
-            await response.WriteAsync($"{JsonSerializer.Serialize(new AIChatCompletionDelta(new AIChatMessageDelta() { Content = "I encountered an error processing your request." }))}\r\n");
+            await response.WriteAsync($"{JsonSerializer.Serialize(new AIChatCompletionDelta(new AIChatMessageDelta() { Content = update.Text }))}\r\n");
             await response.Body.FlushAsync();
         }
 
-        //when the agent has finished MAF automatically calls the AddMessagesAsync of our CustomMessageStore
-
+        await threadStore.SaveThreadAsync(agent, conversationId, thread);
     }
 
     return;

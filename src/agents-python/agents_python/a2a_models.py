@@ -53,6 +53,7 @@ class AgentCard(BaseModel):
     description: str
     version: str
     protocol_version: str = "1.0"
+    preferred_transport: str = "JSONRPC"
     default_input_modes: List[str]
     default_output_modes: List[str]
     capabilities: AgentCapabilities
