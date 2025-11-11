@@ -1,12 +1,12 @@
-﻿#:sdk Aspire.AppHost.Sdk@13.1.0-preview.1.25554.12
-#:package Aspire.Hosting.AppHost@13.1.0-preview.1.25554.12
-#:package Aspire.Hosting.Azure.AIFoundry@13.1.0-preview.1.25554.12
-#:package Aspire.Hosting.Azure.CosmosDB@13.1.0-preview.1.25554.12
-#:package Aspire.Hosting.Azure.Search@13.1.0-preview.1.25554.12
-#:package Aspire.Hosting.NodeJs@13.1.0-preview.1.25554.6
-#:package Aspire.Hosting.Python@13.1.0-preview.1.25554.12
-#:package Aspire.Hosting.Yarp@13.1.0-preview.1.25554.12
-#:package Aspire.Hosting.Azure.AppContainers@13.1.0-preview.1.25554.12
+﻿#:sdk Aspire.AppHost.Sdk@13.0.0
+#:package Aspire.Hosting.AppHost@13.0.0
+#:package Aspire.Hosting.Azure.AIFoundry@13.0.0-preview.1.25560.3
+#:package Aspire.Hosting.Azure.CosmosDB@13.0.0
+#:package Aspire.Hosting.Azure.Search@13.0.0
+#:package Aspire.Hosting.NodeJs@9.5.2
+#:package Aspire.Hosting.Python@13.0.0
+#:package Aspire.Hosting.Yarp@13.0.0
+#:package Aspire.Hosting.Azure.AppContainers@13.0.0
 
 #:project ../mcp-server-dotnet/McpServer.Dotnet.csproj
 #:project ../agents-dotnet/Agents.Dotnet.csproj
@@ -56,7 +56,6 @@ var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dot
         e.Urls.Add(new() { Url = "/agenta2a/v1/card", DisplayText = "🤖A2A Card", Endpoint = e.GetEndpoint("https") });
     });
 
-#pragma warning disable ASPIREHOSTINGPYTHON001
 var pythonAgent = builder.AddPythonModule("pythonagent", "../agents-python", "agents_python.main")
     .WithUvEnvironment()
     .WithHttpEndpoint(env: "PORT")
