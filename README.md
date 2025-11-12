@@ -49,6 +49,10 @@ aspire run
 
 To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.).
 
+### Using DevTunnels
+
+This project will expose the frontend via devtunnel. To use this feature, you need to install the [DevTunnels CLI](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows#install). On the first run, Aspire will notify you to login with your GitHub or Microsoft account to create the tunnel.
+
 ### Aspire single-file AppHost
 
 This sample can uses single-file AppHost. Change the aspire configuration in the [.aspire/settings.json](./.aspire/settings.json) file to point to the [apphost.csproj](./src/apphost/AppHost.csproj) file:

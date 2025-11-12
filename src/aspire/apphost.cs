@@ -3,6 +3,7 @@
 #:package Aspire.Hosting.Azure.AIFoundry@13.0.0-preview.1.25560.3
 #:package Aspire.Hosting.Azure.CosmosDB@13.0.0
 #:package Aspire.Hosting.Azure.Search@13.0.0
+#:package Aspire.Hosting.DevTunnels@13.0.0-preview.1.25560.3
 #:package Aspire.Hosting.JavaScript@13.0.0
 #:package Aspire.Hosting.Python@13.0.0
 #:package Aspire.Hosting.Yarp@13.0.0
@@ -106,6 +107,10 @@ var frontend = builder.AddViteApp("frontend", "../frontend")
         e.Urls.Clear();
         e.Urls.Add(new() { Url = "/", DisplayText = "💬Chat", Endpoint = e.GetEndpoint("http") });
     });
+
+builder.AddDevTunnel("devtunnel")
+    .WithAnonymousAccess()
+    .WithReference(frontend).WaitFor(frontend);
 
 builder.AddYarp("yarp")
     .WithExternalHttpEndpoints()
