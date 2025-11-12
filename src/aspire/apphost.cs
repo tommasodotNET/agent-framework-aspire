@@ -3,7 +3,7 @@
 #:package Aspire.Hosting.Azure.AIFoundry@13.0.0-preview.1.25560.3
 #:package Aspire.Hosting.Azure.CosmosDB@13.0.0
 #:package Aspire.Hosting.Azure.Search@13.0.0
-#:package Aspire.Hosting.NodeJs@9.5.2
+#:package Aspire.Hosting.JavaScript@13.0.0
 #:package Aspire.Hosting.Python@13.0.0
 #:package Aspire.Hosting.Yarp@13.0.0
 #:package Aspire.Hosting.Azure.AppContainers@13.0.0
@@ -57,7 +57,7 @@ var dotnetAgent = builder.AddProject("dotnetagent", "../agents-dotnet/Agents.Dot
     });
 
 var pythonAgent = builder.AddPythonModule("pythonagent", "../agents-python", "agents_python.main")
-    .WithUvEnvironment()
+    .WithUv()
     .WithHttpEndpoint(env: "PORT")
     .WithHttpHealthCheck("/health")
     .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingFoundryName}.openai.azure.com/")
@@ -70,7 +70,7 @@ var pythonAgent = builder.AddPythonModule("pythonagent", "../agents-python", "ag
     });
 
 var pythonCustomWorkflow = builder.AddPythonModule("pythonCustomWorkflow", "../custom-workflow-python", "custom_workflow_python.main")
-    .WithUvEnvironment()
+    .WithUv()
     .WithHttpEndpoint(env: "PORT")
     .WithHttpHealthCheck("/health")
     .WithEnvironment("AZURE_OPENAI_ENDPOINT", $"https://{existingFoundryName}.openai.azure.com/")
