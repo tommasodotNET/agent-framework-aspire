@@ -53,22 +53,6 @@ To ease the debug experience, you can use the [Aspire extension for Visual Studi
 
 This project will expose the frontend via devtunnel. To use this feature, you need to install the [DevTunnels CLI](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows#install). On the first run, Aspire will notify you to login with your GitHub or Microsoft account to create the tunnel.
 
-### Aspire single-file AppHost
-
-This sample can uses single-file AppHost. Change the aspire configuration in the [.aspire/settings.json](./.aspire/settings.json) file to point to the [apphost.csproj](./src/apphost/AppHost.csproj) file:
-
-```json
-{
-  "features": {
-    "singlefileAppHostEnabled": "true",
-    "minimumSdkCheckEnabled": "false"
-  },
-  "appHostPath": "../src/apphost/AppHost.csproj"
-}
-```
-
-Then run the sample as usual with `aspire run` or using Aspire Extension for VS Code.
-
 ## Folder Structure
 
 ```
