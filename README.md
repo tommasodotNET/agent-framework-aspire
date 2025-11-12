@@ -34,7 +34,7 @@ Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to
 
 Powershell:
 ```bash
-iex "& { $(irm https://aspire.dev/install.ps1) } -InstallExtension -Quality dev"
+iex "& { $(irm https://aspire.dev/install.ps1) } -InstallExtension"
 
 aspire run
 ```
@@ -42,7 +42,7 @@ aspire run
 Bash:
 ```bash
 curl -sSL https://aspire.dev/install.sh -o aspire-install.sh
-./aspire-install.sh -InstallExtension -Quality dev
+./aspire-install.sh -InstallExtension
 
 aspire run
 ```
