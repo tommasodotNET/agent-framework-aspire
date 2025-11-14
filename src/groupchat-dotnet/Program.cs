@@ -38,20 +38,25 @@ var pythonHttpClient = new HttpClient()
 var pythonAgentCardResolver = new A2ACardResolver(pythonHttpClient.BaseAddress!, pythonHttpClient, agentCardPath: "/agenta2a/v1/card");
 
 var financialAnalysisAgent = pythonAgentCardResolver.GetAIAgentAsync().Result;
-
 builder.AddAIAgent("financial-analysis-agent", (sp, key) => financialAnalysisAgent);
 
-builder.AddWorkflow("group-chat", (sp, key) => AgentWorkflowBuilder
-    .CreateGroupChatBuilderWith(agents =>
-        new RoundRobinGroupChatManager(agents)
-        {
-            MaximumIterationCount = 2
-        })
-    .AddParticipants(
-        sp.GetRequiredKeyedService<AIAgent>("document-management-agent"),
-        sp.GetRequiredKeyedService<AIAgent>("financial-analysis-agent"))
-    .Build()
-).AddAsAIAgent().WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
+builder.AddAIAgent("group-chat", (sp, key) =>
+{
+    var documentAgent = sp.GetRequiredKeyedService<AIAgent>("document-management-agent");
+    var financialAgent = sp.GetRequiredKeyedService<AIAgent>("financial-analysis-agent");
+
+    Workflow workflow =
+        AgentWorkflowBuilder
+            .CreateGroupChatBuilderWith(agents =>
+                new RoundRobinGroupChatManager(agents)
+                {
+                    MaximumIterationCount = 2
+                })
+            .AddParticipants(documentAgent, financialAgent)
+            .Build();
+
+    return workflow.AsAgent(name: key);
+}).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 
 var app = builder.Build();
 

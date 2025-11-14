@@ -10,6 +10,7 @@ using Agents.Dotnet.Tools;
 using System.Text.Json;
 using A2A;
 using ModelContextProtocol.Client;
+using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,7 +93,7 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management
     [FromBody] AIChatRequest request,
     [FromServices] ILogger<Program> logger,
     HttpResponse response) =>
-{  
+{
     var conversationId = request.SessionState ?? Guid.NewGuid().ToString();
 
     if (request.Messages.Count == 0)
@@ -127,6 +128,10 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management
 });
 
 app.MapDefaultEndpoints();
+
+// var agent = app.Services.GetRequiredKeyedService<AIAgent>("document-management-agent");
+
+// app.MapAGUI("/agent/chat/stream", agent);
 
 app.MapA2A("document-management-agent", "/agenta2a", new AgentCard
 {
