@@ -35,7 +35,7 @@ var pythonHttpClient = new HttpClient()
     BaseAddress = new Uri(Environment.GetEnvironmentVariable("services__pythonagent__https__0") ?? Environment.GetEnvironmentVariable("services__pythonagent__http__0")!),
     Timeout = TimeSpan.FromSeconds(60)
 };
-var pythonAgentCardResolver = new A2ACardResolver(pythonHttpClient.BaseAddress!, pythonHttpClient, agentCardPath: "/agenta2a/v1/card");
+var pythonAgentCardResolver = new A2ACardResolver(pythonHttpClient.BaseAddress!, pythonHttpClient);
 
 var financialAnalysisAgent = pythonAgentCardResolver.GetAIAgentAsync().Result;
 builder.AddAIAgent("financial-analysis-agent", (sp, key) => financialAnalysisAgent);

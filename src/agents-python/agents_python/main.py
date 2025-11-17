@@ -175,6 +175,12 @@ def main():
     
     # Build the FastAPI app
     app_instance = server.build()
+    
+    # Add health endpoint
+    @app_instance.get("/health")
+    async def health():
+        """Health check endpoint."""
+        return {"status": "healthy", "service": "financial-analysis-agent"}
 
     trace.set_tracer_provider(TracerProvider())
     otlpExporter = OTLPSpanExporter(endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT"))
