@@ -1,0 +1,24 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/" />
+  <Folder Name="/src/agents-dotnet/">
+    <Project Path="src/agents-dotnet/Agents.Dotnet.csproj" />
+  </Folder>
+  <Folder Name="/src/groupchat-dotnet/">
+    <Project Path="src/groupchat-dotnet/GroupChat.Dotnet.csproj" />
+  </Folder>
+  <Folder Name="/src/mcp-server-dotnet/">
+    <Project Path="src/mcp-server-dotnet/McpServer.Dotnet.csproj" />
+  </Folder>
+  <Folder Name="/src/service-defaults/">
+    <Project Path="src/service-defaults/ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/test/" />
+  <Folder Name="/test/agents-dotnet-tests/">
+    <Project Path="test/agents-dotnet-tests/Agents.Dotnet.Tests.csproj" />
+  </Folder>
+</Solution>

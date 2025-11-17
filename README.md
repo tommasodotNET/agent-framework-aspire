@@ -1,6 +1,6 @@
 # Agent Framework Aspire
 
-This repository contains a sample implementation of the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework/) using [Aspire](https://github.com/dotnet/aspire/), demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
+This repository contains a sample implementation of the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework/) using [Aspire](https://aspire.dev/), demonstrating how to build Retrieval-Augmented Generation (RAG) applications with both .NET and Python agents.
 
 ## Features
 
@@ -16,12 +16,13 @@ This repository contains a sample implementation of the [Microsoft Agent Framewo
 
 ## Run the sample
 
-> This sample requires .Net 10 Preview SDK and Python 3.11+ installed on your machine.
+> This sample requires latest .Net 10 Preview SDK (RC2) and Python 3.11+ installed on your machine.
 
 To allow Aspire to create or reference existing resources on Azure (e.g. Foundry), you need to configure Azure settings in the [appsettings.json](./src/apphost/appsettings.json) file:
 
 ```json
 "Azure": {
+  "TenantId": "<YOUR-TENANT-ID>",
   "SubscriptionId": "<YOUR-SUBSCRIPTION-ID>",
   "AllowResourceGroupCreation": false,
   "Location": "<YOUR-LOCATION>",
@@ -33,8 +34,7 @@ Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to
 
 Powershell:
 ```bash
-Invoke-RestMethod https://aspire.dev/install.ps1 -OutFile aspire-install.ps1
-./aspire-install.ps1 -q dev
+iex "& { $(irm https://aspire.dev/install.ps1) } -InstallExtension"
 
 aspire run
 ```
@@ -42,28 +42,16 @@ aspire run
 Bash:
 ```bash
 curl -sSL https://aspire.dev/install.sh -o aspire-install.sh
-./aspire-install.sh -q dev
+./aspire-install.sh -InstallExtension
 
 aspire run
 ```
 
-To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.). Otherwise, you can use the [C# Dev Kit for Visual Studio Code](https://learn.microsoft.com/it-it/visualstudio/subscriptions/vs-c-sharp-dev-kit).
+To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.).
 
-### Aspire single-file AppHost
+### Using DevTunnels
 
-This sample can be use with single-file AppHost. Change the aspire configuration in the [.aspire/settings.json](./.aspire/settings.json) file to point to the [apphost.cs](./src/apphost-singlefile/apphost.cs) file:
-
-```json
-{
-  "features": {
-    "singlefileAppHostEnabled": "true",
-    "minimumSdkCheckEnabled": "false"
-  },
-  "appHostPath": "../src/apphost-singlefile/apphost.cs"
-}
-```
-
-Then run the sample as usual with `aspire run`.
+This project will expose the frontend via devtunnel. To use this feature, you need to install the [DevTunnels CLI](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/get-started?tabs=windows#install). On the first run, Aspire will notify you to login with your GitHub or Microsoft account to create the tunnel.
 
 ## Folder Structure
 
@@ -79,8 +67,8 @@ src/
 ├── groupchat-dotnet/           # dotnet Group Chat API
 ├── mcp-server-dotnet/          # dotnet MCP Server
 ├── custom-workflow-python/     # Custom Python Workflow
-├── apphost/                    # Aspire App Host
-├── apphost-singlefile/         # Aspire App Host (Single File)
+├── apphost/                    # Aspire App Host (Legacy)
+├── aspire/                     # Aspire App Host (Single File)
 └── service-defaults/           # Default configurations for services
 test/
 └── agents-dotnet-tests/        # Test project for dotnet agent

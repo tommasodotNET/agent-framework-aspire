@@ -8,12 +8,9 @@ from typing import override
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.types import (
-    TaskArtifactUpdateEvent,
-    TaskState,
-    TaskStatus,
-    TaskStatusUpdateEvent,
+    AgentMessage,
 )
-from a2a.utils import new_agent_text_message, new_task, new_text_artifact
+from a2a.utils import new_agent_text_message
 
 logger = logging.getLogger(__name__)
 
@@ -97,11 +94,11 @@ Always focus on providing actionable business insights based on the available fi
         event_queue: EventQueue,
     ) -> None:
         """
-        Execute the financial analysis task.
+        Execute the financial analysis and return a message.
         
         Args:
             context: The request context containing user input
-            event_queue: Event queue for sending updates
+            event_queue: Event queue for sending message responses
         """
         logger.info("Execute method called")
         logger.info(f"Context: {context}")
@@ -109,21 +106,13 @@ Always focus on providing actionable business insights based on the available fi
         
         query = context.get_user_input()
         logger.info(f"User query: {query}")
-        
-        task = context.current_task
-        logger.info(f"Current task: {task}")
 
         if not context.message:
             logger.error('No message provided in context')
             raise Exception('No message provided')
 
-        if not task:
-            logger.info("Creating new task")
-            task = new_task(context.message)
-            await event_queue.enqueue_event(task)
-
         try:
-            logger.info("Starting task execution")
+            logger.info("Starting execution")
             # Handle empty queries with introduction
             if not query or query.strip() == "":
                 logger.info("Empty query - sending introduction")
@@ -149,84 +138,33 @@ Always focus on providing actionable business insights based on the available fi
                     "is currently unavailable. Please check your Azure configuration."
                 )
 
-            # Send the final result as an artifact
-            await event_queue.enqueue_event(
-                TaskArtifactUpdateEvent(
-                    append=False,
-                    context_id=task.context_id,
-                    task_id=task.id,
-                    last_chunk=True,
-                    artifact=new_text_artifact(
-                        name='financial_analysis_result',
-                        description='Financial analysis result',
-                        text=response_text,
-                    ),
-                )
-            )
-
-            # Mark task as completed
-            await event_queue.enqueue_event(
-                TaskStatusUpdateEvent(
-                    status=TaskStatus(state=TaskState.completed),
-                    final=True,
-                    context_id=task.context_id,
-                    task_id=task.id,
-                )
-            )
+            # Send the response as a message
+            message = new_agent_text_message(response_text)
+            await event_queue.enqueue_event(message)
+            logger.info("Message sent successfully")
 
         except Exception as e:
             # Handle errors gracefully
-            logger.error(f"Error during task execution: {e}", exc_info=True)
+            logger.error(f"Error during execution: {e}", exc_info=True)
             error_message = f"An error occurred while processing your request: {str(e)}"
             
-            await event_queue.enqueue_event(
-                TaskArtifactUpdateEvent(
-                    append=False,
-                    context_id=task.context_id,
-                    task_id=task.id,
-                    last_chunk=True,
-                    artifact=new_text_artifact(
-                        name='error_result',
-                        description='Error in financial analysis',
-                        text=error_message,
-                    ),
-                )
-            )
-
-            # Mark task as failed
-            await event_queue.enqueue_event(
-                TaskStatusUpdateEvent(
-                    status=TaskStatus(
-                        state=TaskState.failed,
-                        message=new_agent_text_message(error_message),
-                    ),
-                    final=True,
-                    context_id=task.context_id,
-                    task_id=task.id,
-                )
-            )
+            # Send error as a message
+            message = new_agent_text_message(error_message)
+            await event_queue.enqueue_event(message)
+            logger.error("Error message sent")
 
     @override
     async def cancel(
         self, context: RequestContext, event_queue: EventQueue
     ) -> None:
         """
-        Cancel the current task.
+        Cancel the current operation.
         
         Args:
             context: The request context
             event_queue: Event queue for sending updates
         """
-        task = context.current_task
-        if task:
-            await event_queue.enqueue_event(
-                TaskStatusUpdateEvent(
-                    status=TaskStatus(
-                        state=TaskState.cancelled,
-                        message=new_agent_text_message("Task cancelled by user"),
-                    ),
-                    final=True,
-                    context_id=task.context_id,
-                    task_id=task.id,
-                )
-            )
+        logger.info("Cancel method called")
+        # Send cancellation message
+        message = new_agent_text_message("Operation cancelled by user")
+        await event_queue.enqueue_event(message)
