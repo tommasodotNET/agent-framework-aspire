@@ -378,15 +378,6 @@ public class YourTools
         return JsonSerializer.Serialize(results);
     }
 
-    [Description("Calculate business metrics")]
-    public string CalculateMetrics(
-        [Description("Metric type to calculate")] string metricType,
-        [Description("Date range for calculation")] DateRange dateRange)
-    {
-        var result = _service.CalculateMetrics(metricType, dateRange);
-        return JsonSerializer.Serialize(result);
-    }
-
     // Helper method to get AIFunction collection
     public IEnumerable<AIFunction> GetFunctions()
     {
@@ -395,24 +386,21 @@ public class YourTools
 }
 ```
 
-### Inline Function Tools
+### Agent as a Tool
 
-For simple tools, you can define them inline:
+You can use other agents as tools, enabling hierarchical agent architectures:
 
 ```csharp
-builder.AddAIAgent("agent", (sp, key) =>
+builder.AddAIAgent("main-agent", (sp, key) =>
 {
     var chatClient = sp.GetRequiredService<IChatClient>();
+    var anotherAgent = sp.GetRequiredKeyedService<AIAgent>("helper-agent");
     
     var agent = chatClient.CreateAIAgent(
         name: key,
         instructions: "Your instructions",
         tools: [
-            AIFunctionFactory.Create(
-                (string input) => $"Processed: {input}",
-                name: "ProcessInput",
-                description: "Processes the input string"
-            )
+            anotherAgent.AsAIFunction()
         ]
     );
     
@@ -420,75 +408,57 @@ builder.AddAIAgent("agent", (sp, key) =>
 });
 ```
 
-### Supported Parameter Types
-
-Tools support various parameter types:
-
--   Primitives: `string`, `int`, `decimal`, `bool`, `DateTime`
--   Nullable types: `string?`, `int?`, etc.
--   Complex types: Custom classes/records (will be serialized as JSON)
--   Collections: `List<T>`, `IEnumerable<T>`, arrays
-
 ## Thread Store and Conversation Management
 
 The thread store manages conversation history and state, enabling stateful conversations across multiple requests. This repository uses Cosmos DB for persistence.
 
 ### Implementing Cosmos Thread Store
 
-To implement a thread store, extend the `AgentThreadStore` base class:
+To implement a thread store, extend the `AgentThreadStore` base class. See `src/agents-dotnet/Services/CosmosAgentThreadStore.cs` for the complete implementation:
 
 ```csharp
-public class CosmosAgentThreadStore : AgentThreadStore
+public sealed class CosmosAgentThreadStore : AgentThreadStore
 {
     private readonly ICosmosThreadRepository _repository;
+    private readonly ILogger<CosmosAgentThreadStore> _logger;
 
-    public CosmosAgentThreadStore(ICosmosThreadRepository repository)
+    public CosmosAgentThreadStore(
+        ICosmosThreadRepository repository,
+        ILogger<CosmosAgentThreadStore> logger)
     {
-        _repository = repository;
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public override async Task<AgentThread> GetThreadAsync(
-        AIAgent agent, 
-        string threadId, 
+    public override async ValueTask SaveThreadAsync(
+        AIAgent agent,
+        string conversationId,
+        AgentThread thread,
         CancellationToken cancellationToken = default)
     {
-        var conversation = await _repository.GetConversationAsync(threadId);
+        var key = GetKey(conversationId, agent.Id);
+        var serializedThread = thread.Serialize();
         
-        if (conversation == null)
-        {
-            return new AgentThread(threadId);
-        }
-
-        var thread = new AgentThread(threadId);
-        
-        foreach (var msg in conversation.Messages)
-        {
-            thread.AppendMessage(new ChatMessage(
-                msg.Role == "user" ? ChatRole.User : ChatRole.Assistant,
-                msg.Content
-            ));
-        }
-
-        return thread;
+        await _repository.SaveThreadAsync(key, serializedThread, cancellationToken);
     }
 
-    public override async Task SaveThreadAsync(
-        AIAgent agent, 
-        string threadId, 
-        AgentThread thread, 
+    public override async ValueTask<AgentThread> GetThreadAsync(
+        AIAgent agent,
+        string conversationId,
         CancellationToken cancellationToken = default)
     {
-        var messages = thread.GetMessages()
-            .Select(m => new ConversationMessage
-            {
-                Role = m.Role.ToString().ToLower(),
-                Content = m.Text,
-                Timestamp = DateTime.UtcNow
-            })
-            .ToList();
+        var key = GetKey(conversationId, agent.Id);
+        var serializedThread = await _repository.GetThreadAsync(key, cancellationToken);
 
-        await _repository.SaveConversationAsync(threadId, messages);
+        if (serializedThread == null)
+        {
+            return agent.GetNewThread();
+        }
+
+        return agent.DeserializeThread(serializedThread.Value);
     }
+
+    private static string GetKey(string conversationId, string agentId) => $"{agentId}:{conversationId}";
 }
 ```
 
