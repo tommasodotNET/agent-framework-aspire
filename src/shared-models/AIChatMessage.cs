@@ -9,13 +9,4 @@ public struct AIChatMessage
 {
     [JsonPropertyName("content")]
     public string Content { get; set; }
-
-    [JsonPropertyName("role")]
-    public AIChatRole Role { get; set; }
-
-    [JsonPropertyName("context")]
-    public BinaryData? Context { get; set; }
-
-    [JsonPropertyName("files")]
-    public IList<AIChatFile>? Files { get; set; }
 }

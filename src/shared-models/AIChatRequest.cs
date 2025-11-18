@@ -9,7 +9,4 @@ public record AIChatRequest([property: JsonPropertyName("messages")] IList<AICha
 {
     [JsonInclude, JsonPropertyName("sessionState")]
     public string? SessionState;
-
-    [JsonInclude, JsonPropertyName("context")]
-    public BinaryData? Context;
 }
