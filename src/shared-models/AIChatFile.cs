@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace GroupChat.Dotnet.Models.UI;
+namespace SharedModels;
 
 public struct AIChatFile
 {

@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace GroupChat.Dotnet.Models.UI;
+namespace SharedModels;
 
 public record AIChatRequest([property: JsonPropertyName("messages")] IList<AIChatMessage> Messages)
 {

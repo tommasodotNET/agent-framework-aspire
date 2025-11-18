@@ -20,6 +20,9 @@ The repository contains several agent implementations in the `src` directory:
 -   `src/agents-dotnet`: A .NET agent with document management capabilities, exposed via A2A and custom API
 -   `src/groupchat-dotnet`: A multi-agent orchestration example using workflows and A2A communication
 -   `src/agents-python`: A Python agent for comparison
+-   `src/shared-services`: Shared Cosmos DB services for agent thread storage and conversation management
+-   `src/shared-models`: Shared UI models for conversational interfaces
+-   `src/service-defaults`: Common Aspire service defaults
 -   `test/agents-dotnet-tests`: Test project demonstrating agent testing patterns
 
 ## Agent Project Structure
@@ -32,15 +35,15 @@ src/your-agent-dotnet/
 ├── YourAgent.Dotnet.csproj        # Project file with dependencies
 ├── appsettings.json               # Configuration
 ├── Properties/
-├── Models/                        # Data models
+├── Models/                        # Agent-specific data models
 │   ├── Tools/                    # Tool-specific models
-│   └── UI/                       # UI/API models
+│   └── UI/                       # Agent-specific UI models (if needed)
 ├── Services/                      # Business logic services
-│   └── CosmosAgentThreadStore.cs # Thread persistence
-├── Tools/                         # Agent tools/functions
-│   └── YourTools.cs
-└── Converters/                    # JSON converters if needed
+└── Tools/                         # Agent tools/functions
+    └── YourTools.cs
 ```
+
+**Note**: Conversational UI models (like `AIChatMessage`, `AIChatRequest`, etc.) and Cosmos thread store services are now in shared libraries (`shared-models` and `shared-services`) to avoid duplication across agents.
 
 ## Dependencies and Project Setup
 
@@ -82,9 +85,30 @@ Add the required NuGet packages to your `.csproj` file:
 
   <ItemGroup>
     <ProjectReference Include="..\service-defaults\ServiceDefaults.csproj" />
+    <ProjectReference Include="..\shared-services\SharedServices.csproj" />
+    <ProjectReference Include="..\shared-models\SharedModels.csproj" />
   </ItemGroup>
 </Project>
 ```
+
+### Shared Libraries
+
+The repository provides shared libraries to avoid code duplication:
+
+**SharedServices** (`src/shared-services`):
+- `CosmosAgentThreadStore`: Cosmos DB implementation of `AgentThreadStore`
+- `CosmosThreadRepository`: Repository for storing/retrieving agent threads
+- `ICosmosThreadRepository`: Interface for thread storage
+- `CosmosSystemTextJsonSerializer`: Custom JSON serializer for Cosmos DB
+
+**SharedModels** (`src/shared-models`):
+- `AIChatMessage`: Chat message model for UI
+- `AIChatRequest`: Chat request model
+- `AIChatRole`: Enum for message roles (User, Assistant, System)
+- `AIChatFile`: File attachment model
+- `AIChatMessageDelta`: Streaming message delta
+- `AIChatCompletionDelta`: Streaming completion delta
+- `JsonCamelCaseEnumConverter`: JSON converter for camelCase enums
 
 ### Key Namespace Imports
 
@@ -98,6 +122,8 @@ using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;   // AGUI support (optional)
 using Microsoft.Extensions.AI;                       // AI abstractions
 using Azure.Identity;                                // Azure authentication
 using A2A;                                           // A2A types
+using SharedServices;                                // Shared Cosmos services
+using SharedModels;                                  // Shared UI models
 ```
 
 ## Agent Implementation Patterns
@@ -155,6 +181,8 @@ builder.AddAIAgent("your-agent-name", (sp, key) =>
 #### Add Custom API Endpoint
 
 ```csharp
+using SharedModels; // Import shared UI models
+
 var app = builder.Build();
 
 app.MapPost("/agent/chat/stream", async (
@@ -412,55 +440,30 @@ builder.AddAIAgent("main-agent", (sp, key) =>
 
 The thread store manages conversation history and state, enabling stateful conversations across multiple requests. This repository uses Cosmos DB for persistence.
 
-### Implementing Cosmos Thread Store
+### Using the Shared Cosmos Thread Store
 
-To implement a thread store, extend the `AgentThreadStore` base class. See `src/agents-dotnet/Services/CosmosAgentThreadStore.cs` for the complete implementation:
+The repository provides a ready-to-use Cosmos DB thread store implementation in the `SharedServices` library. See `src/shared-services/CosmosAgentThreadStore.cs` for the complete implementation.
+
+To use it in your agent:
 
 ```csharp
-public sealed class CosmosAgentThreadStore : AgentThreadStore
-{
-    private readonly ICosmosThreadRepository _repository;
-    private readonly ILogger<CosmosAgentThreadStore> _logger;
+// In your Program.cs, register the Cosmos container and thread store services
+using SharedServices;
 
-    public CosmosAgentThreadStore(
-        ICosmosThreadRepository repository,
-        ILogger<CosmosAgentThreadStore> logger)
-    {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+// Register Cosmos container with custom serializer
+builder.AddKeyedAzureCosmosContainer("conversations", 
+    configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
 
-    public override async ValueTask SaveThreadAsync(
-        AIAgent agent,
-        string conversationId,
-        AgentThread thread,
-        CancellationToken cancellationToken = default)
-    {
-        var key = GetKey(conversationId, agent.Id);
-        var serializedThread = thread.Serialize();
-        
-        await _repository.SaveThreadAsync(key, serializedThread, cancellationToken);
-    }
-
-    public override async ValueTask<AgentThread> GetThreadAsync(
-        AIAgent agent,
-        string conversationId,
-        CancellationToken cancellationToken = default)
-    {
-        var key = GetKey(conversationId, agent.Id);
-        var serializedThread = await _repository.GetThreadAsync(key, cancellationToken);
-
-        if (serializedThread == null)
-        {
-            return agent.GetNewThread();
-        }
-
-        return agent.DeserializeThread(serializedThread.Value);
-    }
-
-    private static string GetKey(string conversationId, string agentId) => $"{agentId}:{conversationId}";
-}
+// Register the thread repository and store from shared services
+builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
+builder.Services.AddSingleton<CosmosAgentThreadStore>();
 ```
+
+The `CosmosAgentThreadStore` handles:
+- Serializing and deserializing agent threads
+- Storing threads in Cosmos DB with a composite key (agentId:conversationId)
+- Creating new threads when none exist
+- Logging operations for debugging
 
 ### Using the Thread Store
 

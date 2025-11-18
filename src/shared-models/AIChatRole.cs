@@ -2,9 +2,8 @@
 // Licensed under the MIT License.
 
 using System.Text.Json.Serialization;
-using Agents.Dotnet.Converters;
 
-namespace Agents.Dotnet.Models.UI;
+namespace SharedModels;
 
 [JsonConverter(typeof(JsonCamelCaseEnumConverter<AIChatRole>))]
 public enum AIChatRole

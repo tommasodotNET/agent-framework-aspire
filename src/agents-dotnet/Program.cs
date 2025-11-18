@@ -4,7 +4,6 @@ using Microsoft.Extensions.AI;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting.A2A;
 using Microsoft.Agents.AI.Hosting;
-using Agents.Dotnet.Models.UI;
 using Agents.Dotnet.Services;
 using Agents.Dotnet.Tools;
 using System.Text.Json;
@@ -12,6 +11,7 @@ using A2A;
 using ModelContextProtocol.Client;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using SharedServices;
+using SharedModels;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Agents.Dotnet.Models.UI;
+namespace SharedModels;
 
 public record AIChatCompletionDelta([property: JsonPropertyName("delta")] AIChatMessageDelta Delta)
 {

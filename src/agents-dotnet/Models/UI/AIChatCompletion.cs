@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System.Text.Json.Serialization;
+using SharedModels;
 
 namespace Agents.Dotnet.Models.UI;
 

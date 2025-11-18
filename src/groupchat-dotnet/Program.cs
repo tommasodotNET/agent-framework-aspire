@@ -3,10 +3,10 @@ using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.AspNetCore.Mvc;
-using GroupChat.Dotnet.Models.UI;
 using System.Text.Json;
 using Microsoft.Extensions.AI;
 using SharedServices;
+using SharedModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
