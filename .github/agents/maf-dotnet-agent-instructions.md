@@ -1,25 +1,28 @@
-# Microsoft Agent Framework - .NET Agent Development Guide
+---
+description: "This agent helps developers create new hosted agents using Microsoft Agent Framework (MAF) with .NET, supporting A2A, custom API, and OpenAI-compatible endpoint patterns."
+name: MAF .NET Agent Developer
+---
 
-This guide provides comprehensive instructions for writing code for hosted agents using Microsoft Agent Framework (MAF) with .NET in this repository.
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Project Structure](#project-structure)
-3. [Dependencies](#dependencies)
-4. [Agent Patterns](#agent-patterns)
-5. [Tools and Functions](#tools-and-functions)
-6. [Thread Store and Conversation Management](#thread-store-and-conversation-management)
-7. [Complete Examples](#complete-examples)
+You are an expert in Microsoft Agent Framework and .NET development, specializing in creating AI agents. The repo you are working in contains multiple agent implementations that can be used as reference patterns.
 
 ## Overview
 
-In this repository, we implement agents using Microsoft Agent Framework with .NET 10. Each agent can be exposed in multiple ways:
-- **A2A (Agent-to-Agent)** communication for inter-agent scenarios
-- **Custom API endpoints** for direct frontend integration
-- **OpenAI Responses and Conversations** (OpenAI-compatible endpoints)
+In this repository, agents are implemented using Microsoft Agent Framework with .NET 10. Each agent can be exposed in multiple ways:
 
-## Project Structure
+-   **A2A (Agent-to-Agent)** communication for inter-agent scenarios
+-   **Custom API endpoints** for direct frontend integration
+-   **OpenAI Responses and Conversations** (OpenAI-compatible endpoints)
+
+## Repo Structure
+
+The repository contains several agent implementations in the `src` directory:
+
+-   `src/agents-dotnet`: A .NET agent with document management capabilities, exposed via A2A and custom API
+-   `src/groupchat-dotnet`: A multi-agent orchestration example using workflows and A2A communication
+-   `src/agents-python`: A Python agent for comparison
+-   `test/agents-dotnet-tests`: Test project demonstrating agent testing patterns
+
+## Agent Project Structure
 
 A typical .NET agent project follows this structure:
 
@@ -39,11 +42,11 @@ src/your-agent-dotnet/
 └── Converters/                    # JSON converters if needed
 ```
 
-## Dependencies
+## Dependencies and Project Setup
 
-### Required NuGet Packages
+### csproj File
 
-Add these packages to your `.csproj` file:
+Add the required NuGet packages to your `.csproj` file:
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk.Web">
@@ -85,6 +88,8 @@ Add these packages to your `.csproj` file:
 
 ### Key Namespace Imports
 
+Your Program.cs will typically need these imports:
+
 ```csharp
 using Microsoft.Agents.AI;                           // Core agent types
 using Microsoft.Agents.AI.Hosting;                   // Hosting extensions
@@ -92,16 +97,16 @@ using Microsoft.Agents.AI.Hosting.A2A;               // A2A support
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;   // AGUI support (optional)
 using Microsoft.Extensions.AI;                       // AI abstractions
 using Azure.Identity;                                // Azure authentication
-using A2A;                                          // A2A types
+using A2A;                                           // A2A types
 ```
 
-## Agent Patterns
+## Agent Implementation Patterns
 
 ### Pattern 1: A2A Agent with Custom API
 
-This is the primary pattern used in the repository (see `src/agents-dotnet/Program.cs`).
+This is the primary pattern used in the repository. See `src/agents-dotnet/Program.cs` for a complete reference implementation.
 
-#### Step 1: Configure Services and Chat Client
+#### Configure Services and Chat Client
 
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
@@ -128,7 +133,7 @@ builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>()
 builder.Services.AddSingleton<CosmosAgentThreadStore>();
 ```
 
-#### Step 2: Register the Agent
+#### Register the Agent
 
 ```csharp
 builder.AddAIAgent("your-agent-name", (sp, key) =>
@@ -147,7 +152,7 @@ builder.AddAIAgent("your-agent-name", (sp, key) =>
 }).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 ```
 
-#### Step 3: Add Custom API Endpoint
+#### Add Custom API Endpoint
 
 ```csharp
 var app = builder.Build();
@@ -195,7 +200,7 @@ app.MapPost("/agent/chat/stream", async (
 });
 ```
 
-#### Step 4: Add A2A Endpoint
+#### Add A2A Endpoint
 
 ```csharp
 app.MapA2A("your-agent-name", "/agenta2a", new AgentCard
@@ -227,9 +232,9 @@ app.Run();
 
 ### Pattern 2: OpenAI-Compatible Endpoints
 
-For OpenAI-compatible API endpoints (based on the reference template), add these endpoints:
+For OpenAI-compatible API endpoints (based on the Microsoft Agent Framework reference template), add these endpoints to support standard OpenAI client libraries.
 
-#### Step 1: Register OpenAI Services
+#### Register OpenAI Services
 
 ```csharp
 // Register services for OpenAI responses and conversations
@@ -237,7 +242,7 @@ builder.Services.AddOpenAIResponses();
 builder.Services.AddOpenAIConversations();
 ```
 
-#### Step 2: Map OpenAI Endpoints
+#### Map OpenAI Endpoints
 
 ```csharp
 var app = builder.Build();
@@ -248,11 +253,12 @@ app.MapOpenAIConversations();
 ```
 
 These endpoints provide OpenAI-compatible APIs:
-- `/v1/chat/completions` - Chat completions endpoint
-- `/v1/completions` - Text completions endpoint
-- Streaming support via SSE (Server-Sent Events)
 
-#### Step 3: (Optional) Add DevUI in Development
+-   `/v1/chat/completions` - Chat completions endpoint
+-   `/v1/completions` - Text completions endpoint
+-   Streaming support via SSE (Server-Sent Events)
+
+#### Add DevUI in Development (Optional)
 
 ```csharp
 if (builder.Environment.IsDevelopment())
@@ -266,7 +272,13 @@ The DevUI will be available at `/devui` and provides a web interface for testing
 
 ### Pattern 3: Multi-Agent with A2A Communication
 
-For orchestrating multiple agents (see `src/groupchat-dotnet/Program.cs`):
+For orchestrating multiple agents via A2A, see `src/groupchat-dotnet/Program.cs` as a reference. This pattern allows you to:
+
+-   Connect to remote agents via HTTP
+-   Compose multiple agents into workflows
+-   Create group chat scenarios with round-robin or custom managers
+
+Example:
 
 ```csharp
 // Connect to remote agents via A2A
@@ -305,7 +317,7 @@ builder.AddAIAgent("group-chat", (sp, key) =>
 
 ### Pattern 4: Sequential Workflow
 
-For sequential agent workflows (from the reference template):
+For sequential agent workflows where one agent's output becomes another's input (from the Microsoft Agent Framework reference template):
 
 ```csharp
 builder.AddAIAgent("writer", "You write short stories about the specified topic.");
@@ -326,9 +338,21 @@ builder.AddWorkflow("publisher", (sp, key) => AgentWorkflowBuilder.BuildSequenti
 
 ## Tools and Functions
 
+Tools enable your agents to perform actions and access data. There are two main approaches to creating tools.
+
 ### Creating Tool Classes
 
-Tools are implemented as classes with methods decorated with `[Description]` attributes:
+Tools are typically implemented as classes with methods decorated with `[Description]` attributes. Each method becomes a tool the agent can invoke.
+
+Key rules for tool classes:
+
+-   Use `[Description]` attribute on both methods and parameters
+-   Return JSON-serialized strings for complex data
+-   Keep tools focused and single-purpose
+-   Use dependency injection for services
+-   Provide a `GetFunctions()` helper method
+
+Example:
 
 ```csharp
 using System.ComponentModel;
@@ -396,19 +420,22 @@ builder.AddAIAgent("agent", (sp, key) =>
 });
 ```
 
-### Tool Parameter Types
+### Supported Parameter Types
 
 Tools support various parameter types:
-- Primitives: `string`, `int`, `decimal`, `bool`, `DateTime`
-- Nullable types: `string?`, `int?`, etc.
-- Complex types: Custom classes/records (will be serialized as JSON)
-- Collections: `List<T>`, `IEnumerable<T>`, arrays
+
+-   Primitives: `string`, `int`, `decimal`, `bool`, `DateTime`
+-   Nullable types: `string?`, `int?`, etc.
+-   Complex types: Custom classes/records (will be serialized as JSON)
+-   Collections: `List<T>`, `IEnumerable<T>`, arrays
 
 ## Thread Store and Conversation Management
 
+The thread store manages conversation history and state, enabling stateful conversations across multiple requests. This repository uses Cosmos DB for persistence.
+
 ### Implementing Cosmos Thread Store
 
-The thread store manages conversation history and state:
+To implement a thread store, extend the `AgentThreadStore` base class:
 
 ```csharp
 public class CosmosAgentThreadStore : AgentThreadStore
@@ -465,9 +492,9 @@ public class CosmosAgentThreadStore : AgentThreadStore
 }
 ```
 
-### Using Thread Store
+### Using the Thread Store
 
-Register and use the thread store:
+Register the thread store with your agent and use it in endpoints:
 
 ```csharp
 // Registration
@@ -487,7 +514,7 @@ await threadStore.SaveThreadAsync(agent, conversationId, thread);
 
 ## Complete Examples
 
-### Example 1: Basic Agent with Tools
+### Basic Agent with Tools
 
 ```csharp
 using Microsoft.Agents.AI;
@@ -521,7 +548,7 @@ app.MapDefaultEndpoints();
 app.Run();
 ```
 
-### Example 2: Agent with All Patterns
+### Agent with All Patterns Combined
 
 ```csharp
 using Microsoft.Agents.AI;
@@ -598,45 +625,53 @@ app.Run();
 
 ## Best Practices
 
-1. **Tool Design**
-   - Keep tools focused and single-purpose
-   - Use clear descriptions for the agent to understand when to use each tool
-   - Return JSON for complex data structures
-   - Handle errors gracefully and return meaningful error messages
+### Tool Design
 
-2. **Agent Instructions**
-   - Be specific about the agent's capabilities and limitations
-   - Include examples of what the agent can help with
-   - Specify the tone and style of responses
-   - Define how the agent should handle edge cases
+-   Keep tools focused and single-purpose
+-   Use clear descriptions for the agent to understand when to use each tool
+-   Return JSON for complex data structures
+-   Handle errors gracefully and return meaningful error messages
 
-3. **Thread Management**
-   - Always use a thread store for conversation persistence
-   - Generate or use consistent conversation IDs
-   - Clean up old conversations periodically
-   - Consider token limits when storing conversation history
+### Agent Instructions
 
-4. **Performance**
-   - Use async/await consistently
-   - Stream responses for better UX
-   - Cache expensive operations
-   - Use appropriate timeouts for remote agent calls
+-   Be specific about the agent's capabilities and limitations
+-   Include examples of what the agent can help with
+-   Specify the tone and style of responses
+-   Define how the agent should handle edge cases
 
-5. **Security**
-   - Use Azure Managed Identity when possible
-   - Never expose API keys in code
-   - Validate and sanitize user inputs
-   - Implement proper authorization for agent endpoints
+### Thread Management
 
-6. **Testing**
-   - Test tool invocations with various inputs
-   - Verify streaming behavior
-   - Test conversation persistence
-   - Use function filters to test tool selection without LLM costs
+-   Always use a thread store for conversation persistence
+-   Generate or use consistent conversation IDs
+-   Clean up old conversations periodically
+-   Consider token limits when storing conversation history
 
-## Additional Resources
+### Performance
 
-- [Microsoft Agent Framework GitHub](https://github.com/microsoft/agent-framework/)
-- [.NET Extensions Templates](https://github.com/dotnet/extensions/tree/main/src/ProjectTemplates/Microsoft.Agents.AI.ProjectTemplates)
-- [Aspire Documentation](https://learn.microsoft.com/dotnet/aspire/)
-- Repository examples: `src/agents-dotnet`, `src/groupchat-dotnet`
+-   Use async/await consistently
+-   Stream responses for better UX
+-   Cache expensive operations
+-   Use appropriate timeouts for remote agent calls
+
+### Security
+
+-   Use Azure Managed Identity when possible
+-   Never expose API keys in code
+-   Validate and sanitize user inputs
+-   Implement proper authorization for agent endpoints
+
+### Testing
+
+-   Test tool invocations with various inputs
+-   Verify streaming behavior
+-   Test conversation persistence
+-   Use function filters to test tool selection without LLM costs (see `test/agents-dotnet-tests` for examples)
+
+## Reference Resources
+
+-   [Microsoft Agent Framework GitHub](https://github.com/microsoft/agent-framework/) - Official MAF repository
+-   [.NET Extensions Templates](https://github.com/dotnet/extensions/tree/main/src/ProjectTemplates/Microsoft.Agents.AI.ProjectTemplates) - Official project templates
+-   [Aspire Documentation](https://learn.microsoft.com/dotnet/aspire/) - .NET Aspire documentation
+-   `src/agents-dotnet` - Reference implementation with A2A and custom API
+-   `src/groupchat-dotnet` - Multi-agent orchestration example
+-   `test/agents-dotnet-tests` - Testing patterns and examples
