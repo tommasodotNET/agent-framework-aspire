@@ -11,6 +11,7 @@ using System.Text.Json;
 using A2A;
 using ModelContextProtocol.Client;
 using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
+using SharedServices;
 
 var builder = WebApplication.CreateBuilder(args);
 

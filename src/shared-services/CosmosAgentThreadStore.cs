@@ -4,7 +4,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace GroupChat.Dotnet.Services;
+namespace SharedServices;
 
 /// <summary>
 /// Provides a Cosmos DB implementation of <see cref="AgentThreadStore"/> for production scenarios.

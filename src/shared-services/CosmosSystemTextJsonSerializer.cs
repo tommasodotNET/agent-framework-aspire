@@ -3,7 +3,7 @@ using System.Text.Json;
 using Azure.Core.Serialization;
 using Microsoft.Azure.Cosmos;
 
-namespace GroupChat.Dotnet.Services;
+namespace SharedServices;
 
 public class CosmosSystemTextJsonSerializer : CosmosSerializer
 {

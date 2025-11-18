@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace GroupChat.Dotnet.Services;
+namespace SharedServices;
 
 /// <summary>
 /// Interface for storing and retrieving serialized agent threads in Cosmos DB.

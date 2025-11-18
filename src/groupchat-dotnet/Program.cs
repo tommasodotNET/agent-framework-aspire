@@ -4,9 +4,9 @@ using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.AspNetCore.Mvc;
 using GroupChat.Dotnet.Models.UI;
-using GroupChat.Dotnet.Services;
 using System.Text.Json;
 using Microsoft.Extensions.AI;
+using SharedServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +14,6 @@ builder.AddServiceDefaults();
 
 // Add Cosmos DB for conversation storage
 builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (option) => { option.Serializer = new CosmosSystemTextJsonSerializer(); });
-builder.Services.AddSingleton<ICosmosRepository, SampleCosmosRepository>();
 
 // Register Cosmos Thread Store services
 builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();

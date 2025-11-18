@@ -5,7 +5,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace GroupChat.Dotnet.Services;
+namespace SharedServices;
 
 /// <summary>
 /// Cosmos DB implementation for storing and retrieving serialized agent threads.
