@@ -176,6 +176,16 @@ def main():
     # Build the FastAPI app
     app_instance = server.build()
     
+    # Add CORS middleware
+    from fastapi.middleware.cors import CORSMiddleware
+    app_instance.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    
     # Add health endpoint
     @app_instance.get("/health")
     async def health():
