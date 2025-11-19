@@ -1,6 +1,7 @@
 using A2A;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
+using Microsoft.Agents.AI.Hosting.A2A;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -18,6 +19,17 @@ builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (o
 // Register Cosmos Thread Store services
 builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
 builder.Services.AddSingleton<CosmosAgentThreadStore>();
+
+// Configure CORS for A2A frontend access
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var dotnetHttpClient = new HttpClient()
 {
@@ -58,6 +70,9 @@ builder.AddAIAgent("group-chat", (sp, key) =>
 }).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 
 var app = builder.Build();
+
+// Enable CORS
+app.UseCors();
 
 app.MapGet("/test-dotnet-a2a-agent", async ([FromKeyedServices("document-management-agent")] AIAgent documentAgent) =>
 {
@@ -118,6 +133,32 @@ app.MapPost("/agent/chat/stream", async ([FromKeyedServices("group-chat")] AIAge
     }
 
     return;
+});
+
+app.MapA2A("group-chat", "/agenta2a", new AgentCard
+{
+    Name = "group-chat",
+    Url = app.Configuration["ASPNETCORE_URLS"]?.Split(';')[0] + "/agenta2a" ?? "http://localhost:5198/agenta2a",
+    Description = "Multi-agent group chat orchestrating document and financial analysis agents",
+    Version = "1.0",
+    DefaultInputModes = ["text"],
+    DefaultOutputModes = ["text"],
+    Capabilities = new AgentCapabilities
+    {
+        Streaming = true,
+        PushNotifications = false
+    },
+    Skills = [
+        new AgentSkill
+        {
+            Name = "Multi-Agent Orchestration",
+            Description = "Coordinate multiple specialized agents to answer complex queries",
+            Examples = [
+                "What vendors are we required to use for office supplies and what has been our spending pattern with those vendors?",
+                "Analyze our procurement policy and recent financial data together"
+            ]
+        }
+    ]
 });
 
 app.MapDefaultEndpoints();

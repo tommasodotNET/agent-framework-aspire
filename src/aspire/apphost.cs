@@ -116,6 +116,18 @@ builder.AddYarp("yarp")
     .WithExternalHttpEndpoints()
     .WithConfiguration(yarp =>
     {
+        // Route A2A endpoints for agents
+        yarp.AddRoute("/agenta2a/dotnet/{**catch-all}", dotnetAgent)
+            .WithTransformPathRemovePrefix("/agenta2a/dotnet")
+            .WithTransformPathPrefix("/agenta2a");
+        yarp.AddRoute("/agenta2a/python/{**catch-all}", pythonAgent)
+            .WithTransformPathRemovePrefix("/agenta2a/python")
+            .WithTransformPathPrefix("/agenta2a");
+        yarp.AddRoute("/agenta2a/groupchat/{**catch-all}", dotnetGroupChat)
+            .WithTransformPathRemovePrefix("/agenta2a/groupchat")
+            .WithTransformPathPrefix("/agenta2a");
+        
+        // Keep legacy custom API endpoints for backward compatibility (to be removed later)
         yarp.AddRoute("/agent/dotnet/{**catch-all}", dotnetAgent)
             .WithTransformPathRemovePrefix("/agent/dotnet")
             .WithTransformPathPrefix("/agent");

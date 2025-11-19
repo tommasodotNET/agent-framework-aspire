@@ -29,6 +29,17 @@ builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<DocumentTools>();
 builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
 
+// Configure CORS for A2A frontend access
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 // Register Cosmos Thread Store services
 builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
 builder.Services.AddSingleton<CosmosAgentThreadStore>();
@@ -89,6 +100,9 @@ builder.AddAIAgent("document-management-agent", (sp, key) =>
 
 var app = builder.Build();
 
+// Enable CORS
+app.UseCors();
+
 app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management-agent")] AIAgent agent,
     [FromKeyedServices("document-management-agent")] AgentThreadStore threadStore,
     [FromBody] AIChatRequest request,
@@ -137,7 +151,7 @@ app.MapDefaultEndpoints();
 app.MapA2A("document-management-agent", "/agenta2a", new AgentCard
 {
     Name = "document-management-agent",
-    Url = "http://localhost:5196/agenta2a",
+    Url = app.Configuration["ASPNETCORE_URLS"]?.Split(';')[0] + "/agenta2a" ?? "http://localhost:5196/agenta2a",
     Description = "Document Management and Policy Compliance Assistant",
     Version = "1.0",
     DefaultInputModes = ["text"],
