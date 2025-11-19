@@ -2,97 +2,113 @@
 // Licensed under the MIT License.
 
 import { Button } from "@fluentui/react-components";
-import {
-    AIChatMessage,
-    AIChatProtocolClient,
-    AIChatError,
-} from "@microsoft/ai-chat-protocol";
+import { A2AClient } from '@a2a-js/sdk/client';
+import type { MessageSendParams, Message } from '@a2a-js/sdk';
 import { useEffect, useId, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import TextareaAutosize from "react-textarea-autosize";
 import styles from "./Chat.module.css";
 import gfm from "remark-gfm";
+import { v4 as uuidv4 } from 'uuid';
 
+type ChatMessage = {
+    role: 'user' | 'assistant';
+    content: string;
+};
 
-type ChatEntry = (AIChatMessage & { dataUrl?: string }) | AIChatError;
 type ApiType = 'dotnet' | 'python' | 'groupchat';
 type Theme = 'light' | 'dark' | 'system';
 
-function isChatError(entry: unknown): entry is AIChatError {
-    return (entry as AIChatError).code !== undefined;
-}
-
 export default function Chat({ style }: { style: React.CSSProperties }) {
     const [selectedApi, setSelectedApi] = useState<ApiType>('dotnet');
-    const [client, setClient] = useState(() => new AIChatProtocolClient("/agent/dotnet/chat/"));
+    const [client, setClient] = useState<A2AClient | null>(null);
 
-    const [messages, setMessages] = useState<ChatEntry[]>([]);
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [input, setInput] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasInvokedInitialAgent, setHasInvokedInitialAgent] = useState<boolean>(false);
     const inputId = useId();
-    // Set initial sessionState to undefined
-    const [sessionState, setSessionState] = useState<string | undefined>(undefined);
+    const [conversationId, setConversationId] = useState<string>("");
     const [theme, setTheme] = useState<Theme>('system');
     const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const initialFetchStarted = useRef(false); // <--- aggiungi questa ref
+    const initialFetchStarted = useRef(false);
+
+    // Initialize A2A client based on selected API
+    useEffect(() => {
+        const initClient = async () => {
+            let cardUrl = '/agenta2a/dotnet/v1/card';
+            if (selectedApi === 'python') {
+                cardUrl = '/agenta2a/python/v1/card';
+            } else if (selectedApi === 'groupchat') {
+                cardUrl = '/agenta2a/groupchat/v1/card';
+            }
+            
+            try {
+                const a2aClient = await A2AClient.fromCardUrl(cardUrl);
+                setClient(a2aClient);
+            } catch (error) {
+                console.error('Failed to initialize A2A client:', error);
+            }
+        };
+
+        initClient();
+    }, [selectedApi]);
 
     const invokeAgentWithEmptyMessage = async () => {
-        if (isLoading || !sessionState) return;
+        if (isLoading || !client || !conversationId) return;
         
         setIsLoading(true);
         try {
-            const result = await client.getStreamedCompletion([], {
-                sessionState: sessionState,
-            });
+            const params: MessageSendParams = {
+                message: {
+                    messageId: uuidv4(),
+                    role: 'user',
+                    kind: 'message',
+                    parts: [{ kind: 'text', text: '' }],
+                    contextId: conversationId,
+                },
+            };
 
-            const latestMessage: AIChatMessage = { content: "", role: "assistant" };
-            for await (const response of result) {
-                if (response.sessionState) {
-                    setSessionState(response.sessionState as string);
+            let accumulatedContent = '';
+            for await (const event of client.sendMessageStream(params)) {
+                if (event.kind === 'message') {
+                    const message = event as Message;
+                    for (const part of message.parts) {
+                        if (part.kind === 'text') {
+                            accumulatedContent += part.text;
+                        }
+                    }
                 }
-                if (!response.delta) {
-                    continue;
-                }
-                if (response.delta.role) {
-                    latestMessage.role = response.delta.role;
-                }
-                if (response.delta.content) {
-                    latestMessage.content += response.delta.content;
-                    setMessages([latestMessage]);
-                }
+            }
+
+            if (accumulatedContent) {
+                setMessages([{ role: 'assistant', content: accumulatedContent }]);
             }
         } catch (e) {
-            console.log("ERROR: ", e);
-            if (isChatError(e)) {
-                setMessages([e]);
-            } else {
-                setMessages([
-                    { code: "unknown_error", message: String(e) },
-                ]);
-            }
+            console.error("ERROR: ", e);
+            setMessages([{ role: 'assistant', content: `Error: ${String(e)}` }]);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        // Generate initial session state if not present
-        if (!sessionState && !initialFetchStarted.current) {
-            const newSessionId = crypto.randomUUID();
-            setSessionState(newSessionId);
+        // Generate initial conversation ID if not present
+        if (!conversationId && !initialFetchStarted.current) {
+            const newConversationId = crypto.randomUUID();
+            setConversationId(newConversationId);
             initialFetchStarted.current = true;
         }
-    }, [sessionState]);
+    }, [conversationId]);
 
     // Invoke agent with empty message when session is ready and agent hasn't been invoked yet
     useEffect(() => {
-        if (sessionState && !hasInvokedInitialAgent && !isLoading) {
+        if (conversationId && client && !hasInvokedInitialAgent && !isLoading) {
             setHasInvokedInitialAgent(true);
             invokeAgentWithEmptyMessage();
         }
-    }, [sessionState, hasInvokedInitialAgent, isLoading]);
+    }, [conversationId, client, hasInvokedInitialAgent, isLoading]);
 
     // Load saved theme
     useEffect(() => {
@@ -123,13 +139,12 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
         }
     }, [theme]);
 
-    // Quando resetti la conversazione, consenti una nuova fetch iniziale
     const handleResetConversation = () => {
-        const newSessionId = crypto.randomUUID();
-        setSessionState(newSessionId);
+        const newConversationId = crypto.randomUUID();
+        setConversationId(newConversationId);
         setMessages([]);
         setHasInvokedInitialAgent(false);
-        initialFetchStarted.current = false; // <--- resetta la ref
+        initialFetchStarted.current = false;
     };
 
     const scrollToBottom = () => {
@@ -138,78 +153,54 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
     useEffect(scrollToBottom, [messages]);
 
     const sendMessage = async () => {
-        if (!input.trim() || isLoading) return;
+        if (!input.trim() || isLoading || !client) return;
         
-        const message: AIChatMessage = {
+        const userMessage: ChatMessage = {
             role: "user",
             content: input,
         };
-        const updatedMessages: ChatEntry[] = [...messages, message];
+        const updatedMessages: ChatMessage[] = [...messages, userMessage];
         setMessages(updatedMessages);
         setInput("");
         setIsLoading(true);
         
         // Add a placeholder assistant message that will be updated
-        const assistantMessage: AIChatMessage = { content: "", role: "assistant" };
+        const assistantMessage: ChatMessage = { content: "", role: "assistant" };
         setMessages([...updatedMessages, assistantMessage]);
         
         try {
-            // Build the conversation from updatedMessages, filtering out errors
-            const conversation = updatedMessages
-                .filter((entry) => !isChatError(entry))
-                .map((msg) => msg as AIChatMessage);
+            const params: MessageSendParams = {
+                message: {
+                    messageId: uuidv4(),
+                    role: 'user',
+                    kind: 'message',
+                    parts: [{ kind: 'text', text: input }],
+                    contextId: conversationId,
+                },
+            };
 
-            const result = await client.getStreamedCompletion(conversation, {
-                sessionState: sessionState,
-            });
-
-            console.log("result", result);
-
-            let accumulatedContent = "";
-            for await (const response of result) {
-                if (response.sessionState) {
-                    setSessionState(response.sessionState as string);
-                }
-                if (!response.delta) {
-                    continue;
-                }
-                if (response.delta.content) {
-                    accumulatedContent += response.delta.content;
-                    const updatedAssistantMessage: AIChatMessage = {
-                        content: accumulatedContent,
-                        role: "assistant"
-                    };
-                    setMessages([...updatedMessages, updatedAssistantMessage]);
+            let accumulatedContent = '';
+            for await (const event of client.sendMessageStream(params)) {
+                if (event.kind === 'message') {
+                    const message = event as Message;
+                    for (const part of message.parts) {
+                        if (part.kind === 'text') {
+                            accumulatedContent += part.text;
+                            const updatedAssistantMessage: ChatMessage = {
+                                content: accumulatedContent,
+                                role: "assistant"
+                            };
+                            setMessages([...updatedMessages, updatedAssistantMessage]);
+                        }
+                    }
                 }
             }
         } catch (e) {
-            console.log("ERROR: ", e);
-
-            if (isChatError(e)) {
-                setMessages([...updatedMessages, e]);
-            }
-            else {
-                setMessages([
-                    ...updatedMessages,
-                    { code: "unknown_error", message: String(e) },
-                ]);
-            }
+            console.error("ERROR: ", e);
+            setMessages([...updatedMessages, { role: 'assistant', content: `Error: ${String(e)}` }]);
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const getClassName = (message: ChatEntry) => {
-        if (isChatError(message)) {
-            return styles.caution;
-        }
-        return message.role === "user"
-            ? styles.userMessage
-            : styles.assistantMessage;
-    };
-
-    const getErrorMessage = (message: AIChatError) => {
-        return `${message.code}: ${message.message}`;
     };
 
     const handleThemeChange = (newTheme: Theme) => {
@@ -218,7 +209,7 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
 
     return (
         <div className={`${styles.chatWindow} ${effectiveTheme === 'dark' ? styles.dark : ''}`} style={style}>
-            {/* Header with API selection, sessionState and reset button */}
+            {/* Header with API selection, conversationId and reset button */}
             <div className={styles.header}>
                 <h1 className={styles.headerTitle}>AI Agent Hub</h1>
                 <div className={styles.headerContent}>
@@ -254,18 +245,9 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
                                 const newApi = e.target.value as ApiType;
                                 setSelectedApi(newApi);
                                 
-                                // Update the client with the new API endpoint
-                                let baseUrl = '/agent/dotnet/chat/';
-                                if (newApi === 'python') {
-                                    baseUrl = '/agent/python/chat/';
-                                } else if (newApi === 'groupchat') {
-                                    baseUrl = '/agent/groupchat/chat/';
-                                }
-                                setClient(new AIChatProtocolClient(baseUrl));
-                                
                                 // Reset conversation when switching APIs and generate new session
-                                const newSessionId = crypto.randomUUID();
-                                setSessionState(newSessionId);
+                                const newConversationId = crypto.randomUUID();
+                                setConversationId(newConversationId);
                                 setMessages([]);
                                 setHasInvokedInitialAgent(false);
                                 initialFetchStarted.current = false;
@@ -281,8 +263,8 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
                         <label className={styles.sessionLabel}>Session:</label>
                         <input
                             type="text"
-                            value={sessionState || ''}
-                            onChange={(e) => setSessionState(e.target.value)}
+                            value={conversationId || ''}
+                            onChange={(e) => setConversationId(e.target.value)}
                             placeholder="Enter or generate session ID..."
                             className={styles.sessionInput}
                         />
@@ -301,21 +283,15 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
                     </div>
                 )}
                 {messages.map((message, index) => (
-                    <div key={`message-${index}`} className={getClassName(message)}>
-                        {isChatError(message) ? (
-                            <>{getErrorMessage(message)}</>
-                        ) : (
-                            <>
-                                <div className={styles.messageIcon}>
-                                    {message.role === 'user' ? '👤' : '🤖'}
-                                </div>
-                                <div className={styles.messageBubble}>
-                                    <ReactMarkdown remarkPlugins={[gfm]}>
-                                        {message.content}
-                                    </ReactMarkdown>
-                                </div>
-                            </>
-                        )}
+                    <div key={`message-${index}`} className={message.role === 'user' ? styles.userMessage : styles.assistantMessage}>
+                        <div className={styles.messageIcon}>
+                            {message.role === 'user' ? '👤' : '🤖'}
+                        </div>
+                        <div className={styles.messageBubble}>
+                            <ReactMarkdown remarkPlugins={[gfm]}>
+                                {message.content}
+                            </ReactMarkdown>
+                        </div>
                     </div>
                 ))}
                 {isLoading && (
