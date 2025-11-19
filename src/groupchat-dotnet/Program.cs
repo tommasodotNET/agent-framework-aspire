@@ -71,29 +71,6 @@ var app = builder.Build();
 // Enable CORS
 app.UseCors();
 
-app.MapGet("/test-dotnet-a2a-agent", async ([FromKeyedServices("document-management-agent")] AIAgent documentAgent) =>
-{
-    var documentResponse = await documentAgent.RunAsync("What is our remote work policy?");
-    Console.WriteLine($"Document Agent: {documentResponse.Text}");
-
-    return Results.Ok(new { DocumentAgent = documentResponse.Text });
-});
-
-app.MapGet("/test-python-a2a-agent", async ([FromKeyedServices("financial-analysis-agent")] AIAgent documentAgent) =>
-{
-    var documentResponse = await documentAgent.RunAsync("What were our top-performing products last quarter?");
-    Console.WriteLine($"Financial Agent: {documentResponse.Text}");
-
-    return Results.Ok(new { FinancialAgent = documentResponse.Text });
-});
-
-app.MapGet("/agent/chat", async ([FromKeyedServices("group-chat")] AIAgent groupChatAgent) =>
-{
-    var prompt = "According to our procurement policy, what vendors are we required to use for office supplies, and what has been our spending pattern with those vendors over the past 6 months?";
-    var groupChatResponse = await groupChatAgent.RunAsync(prompt);
-    return Results.Ok(groupChatResponse);
-});
-
 app.MapA2A("group-chat", "/agenta2a", new AgentCard
 {
     Name = "group-chat",
