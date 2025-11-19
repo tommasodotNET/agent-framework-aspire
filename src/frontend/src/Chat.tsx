@@ -2,64 +2,68 @@
 // Licensed under the MIT License.
 
 import { Button } from "@fluentui/react-components";
-import {
-    AIChatMessage,
-    AIChatProtocolClient,
-    AIChatError,
-} from "@microsoft/ai-chat-protocol";
 import { useEffect, useId, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import TextareaAutosize from "react-textarea-autosize";
 import styles from "./Chat.module.css";
 import gfm from "remark-gfm";
+import { A2AClientWrapper, A2AChatMessage } from "./A2AClientWrapper.ts";
 
-
-type ChatEntry = (AIChatMessage & { dataUrl?: string }) | AIChatError;
-type ApiType = 'dotnet' | 'python' | 'groupchat';
+type ChatEntry = A2AChatMessage | ChatError;
 type Theme = 'light' | 'dark' | 'system';
+type AgentType = 'dotnet' | 'python' | 'groupchat';
 
-function isChatError(entry: unknown): entry is AIChatError {
-    return (entry as AIChatError).code !== undefined;
+interface ChatError {
+    code: string;
+    message: string;
 }
 
+function isChatError(entry: unknown): entry is ChatError {
+    return (entry as ChatError).code !== undefined;
+}
+
+const AGENTS: Record<AgentType, { name: string; endpoint: string; icon: string }> = {
+    dotnet: { name: '.NET Agent (Documents)', endpoint: '/agenta2a/dotnet/v1/card', icon: '📄' },
+    python: { name: 'Python Agent (Financial)', endpoint: '/agenta2a/python/.well-known/agent-card.json', icon: '📊' },
+    groupchat: { name: 'Group Chat (Multi-Agent)', endpoint: '/agenta2a/groupchat/v1/card', icon: '👥' },
+};
+
 export default function Chat({ style }: { style: React.CSSProperties }) {
-    const [selectedApi, setSelectedApi] = useState<ApiType>('dotnet');
-    const [client, setClient] = useState(() => new AIChatProtocolClient("/agent/dotnet/chat/"));
+    const [selectedAgent, setSelectedAgent] = useState<AgentType>('dotnet');
+    // Initialize A2A client with the orchestrator agent card URL
+    const [client, setClient] = useState(() => new A2AClientWrapper(AGENTS.dotnet.endpoint));
 
     const [messages, setMessages] = useState<ChatEntry[]>([]);
     const [input, setInput] = useState<string>("");
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [hasInvokedInitialAgent, setHasInvokedInitialAgent] = useState<boolean>(false);
     const inputId = useId();
-    // Set initial sessionState to undefined
-    const [sessionState, setSessionState] = useState<string | undefined>(undefined);
+    // Use contextId for conversation management (A2A terminology)
+    const [contextId, setContextId] = useState<string | undefined>(undefined);
     const [theme, setTheme] = useState<Theme>('system');
     const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light');
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const initialFetchStarted = useRef(false); // <--- aggiungi questa ref
+    const initialFetchStarted = useRef(false);
 
     const invokeAgentWithEmptyMessage = async () => {
-        if (isLoading || !sessionState) return;
+        if (isLoading || !contextId) return;
         
         setIsLoading(true);
         try {
-            const result = await client.getStreamedCompletion([], {
-                sessionState: sessionState,
-            });
-
-            const latestMessage: AIChatMessage = { content: "", role: "assistant" };
-            for await (const response of result) {
-                if (response.sessionState) {
-                    setSessionState(response.sessionState as string);
+            // Send an initial message to get the greeting
+            const initialMessage: A2AChatMessage = { 
+                role: "user", 
+                content: "Hello" 
+            };
+            
+            const latestMessage: A2AChatMessage = { content: "", role: "assistant" };
+            
+            for await (const event of client.sendMessageStream([initialMessage], contextId)) {
+                if (event.contextId) {
+                    setContextId(event.contextId);
                 }
-                if (!response.delta) {
-                    continue;
-                }
-                if (response.delta.role) {
-                    latestMessage.role = response.delta.role;
-                }
-                if (response.delta.content) {
-                    latestMessage.content += response.delta.content;
+                if (event.content) {
+                    latestMessage.content += event.content;
                     setMessages([latestMessage]);
                 }
             }
@@ -78,21 +82,21 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
     };
 
     useEffect(() => {
-        // Generate initial session state if not present
-        if (!sessionState && !initialFetchStarted.current) {
-            const newSessionId = crypto.randomUUID();
-            setSessionState(newSessionId);
+        // Generate initial contextId if not present
+        if (!contextId && !initialFetchStarted.current) {
+            const newContextId = crypto.randomUUID();
+            setContextId(newContextId);
             initialFetchStarted.current = true;
         }
-    }, [sessionState]);
+    }, [contextId]);
 
-    // Invoke agent with empty message when session is ready and agent hasn't been invoked yet
+    // Invoke agent with empty message when context is ready and agent hasn't been invoked yet
     useEffect(() => {
-        if (sessionState && !hasInvokedInitialAgent && !isLoading) {
+        if (contextId && !hasInvokedInitialAgent && !isLoading) {
             setHasInvokedInitialAgent(true);
             invokeAgentWithEmptyMessage();
         }
-    }, [sessionState, hasInvokedInitialAgent, isLoading]);
+    }, [contextId, hasInvokedInitialAgent, isLoading]);
 
     // Load saved theme
     useEffect(() => {
@@ -123,13 +127,13 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
         }
     }, [theme]);
 
-    // Quando resetti la conversazione, consenti una nuova fetch iniziale
+    // Reset conversation with new contextId
     const handleResetConversation = () => {
-        const newSessionId = crypto.randomUUID();
-        setSessionState(newSessionId);
+        const newContextId = crypto.randomUUID();
+        setContextId(newContextId);
         setMessages([]);
         setHasInvokedInitialAgent(false);
-        initialFetchStarted.current = false; // <--- resetta la ref
+        initialFetchStarted.current = false;
     };
 
     const scrollToBottom = () => {
@@ -140,7 +144,7 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
     const sendMessage = async () => {
         if (!input.trim() || isLoading) return;
         
-        const message: AIChatMessage = {
+        const message: A2AChatMessage = {
             role: "user",
             content: input,
         };
@@ -150,32 +154,25 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
         setIsLoading(true);
         
         // Add a placeholder assistant message that will be updated
-        const assistantMessage: AIChatMessage = { content: "", role: "assistant" };
+        const assistantMessage: A2AChatMessage = { content: "", role: "assistant" };
         setMessages([...updatedMessages, assistantMessage]);
         
         try {
             // Build the conversation from updatedMessages, filtering out errors
             const conversation = updatedMessages
                 .filter((entry) => !isChatError(entry))
-                .map((msg) => msg as AIChatMessage);
-
-            const result = await client.getStreamedCompletion(conversation, {
-                sessionState: sessionState,
-            });
-
-            console.log("result", result);
+                .map((msg) => msg as A2AChatMessage);
 
             let accumulatedContent = "";
-            for await (const response of result) {
-                if (response.sessionState) {
-                    setSessionState(response.sessionState as string);
+            
+            // Stream the response using A2A protocol
+            for await (const event of client.sendMessageStream(conversation, contextId)) {
+                if (event.contextId) {
+                    setContextId(event.contextId);
                 }
-                if (!response.delta) {
-                    continue;
-                }
-                if (response.delta.content) {
-                    accumulatedContent += response.delta.content;
-                    const updatedAssistantMessage: AIChatMessage = {
+                if (event.content) {
+                    accumulatedContent += event.content;
+                    const updatedAssistantMessage: A2AChatMessage = {
                         content: accumulatedContent,
                         role: "assistant"
                     };
@@ -208,7 +205,7 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
             : styles.assistantMessage;
     };
 
-    const getErrorMessage = (message: AIChatError) => {
+    const getErrorMessage = (message: ChatError) => {
         return `${message.code}: ${message.message}`;
     };
 
@@ -216,12 +213,30 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
         setTheme(newTheme);
     };
 
+    const handleAgentChange = (agent: AgentType) => {
+        setSelectedAgent(agent);
+        setClient(new A2AClientWrapper(AGENTS[agent].endpoint));
+        handleResetConversation();
+    };
+
     return (
         <div className={`${styles.chatWindow} ${effectiveTheme === 'dark' ? styles.dark : ''}`} style={style}>
-            {/* Header with API selection, sessionState and reset button */}
+            {/* Header with sessionState and reset button */}
             <div className={styles.header}>
-                <h1 className={styles.headerTitle}>AI Agent Hub</h1>
+                <h1 className={styles.headerTitle}>City Assistant</h1>
                 <div className={styles.headerContent}>
+                    <div className={styles.agentSelector}>
+                        <label className={styles.agentLabel}>Agent:</label>
+                        <select 
+                            value={selectedAgent} 
+                            onChange={(e) => handleAgentChange(e.target.value as AgentType)}
+                            className={styles.agentDropdown}
+                        >
+                            {Object.entries(AGENTS).map(([key, { name, icon }]) => (
+                                <option key={key} value={key}>{icon} {name}</option>
+                            ))}
+                        </select>
+                    </div>
                     <div className={styles.themeSelector}>
                         <button 
                             className={`${styles.themeButton} ${theme === 'light' ? styles.active : ''}`}
@@ -245,45 +260,14 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
                             🌙
                         </button>
                     </div>
-                    <div className={styles.agentSelector}>
-                        <label className={styles.agentSelectorLabel}>Agent:</label>
-                        <select 
-                            className={styles.agentDropdown}
-                            value={selectedApi}
-                            onChange={(e) => {
-                                const newApi = e.target.value as ApiType;
-                                setSelectedApi(newApi);
-                                
-                                // Update the client with the new API endpoint
-                                let baseUrl = '/agent/dotnet/chat/';
-                                if (newApi === 'python') {
-                                    baseUrl = '/agent/python/chat/';
-                                } else if (newApi === 'groupchat') {
-                                    baseUrl = '/agent/groupchat/chat/';
-                                }
-                                setClient(new AIChatProtocolClient(baseUrl));
-                                
-                                // Reset conversation when switching APIs and generate new session
-                                const newSessionId = crypto.randomUUID();
-                                setSessionState(newSessionId);
-                                setMessages([]);
-                                setHasInvokedInitialAgent(false);
-                                initialFetchStarted.current = false;
-                            }}
-                        >
-                            <option value="dotnet">📄 .NET Agent (Documents)</option>
-                            <option value="python">📊 Python Agent (Financial)</option>
-                            <option value="groupchat">👥 Group Chat (Multi-Agent)</option>
-                        </select>
-                    </div>
                     
                     <div className={styles.sessionInfo}>
-                        <label className={styles.sessionLabel}>Session:</label>
+                        <label className={styles.sessionLabel}>Context:</label>
                         <input
                             type="text"
-                            value={sessionState || ''}
-                            onChange={(e) => setSessionState(e.target.value)}
-                            placeholder="Enter or generate session ID..."
+                            value={contextId || ''}
+                            onChange={(e) => setContextId(e.target.value)}
+                            placeholder="Enter or generate context ID..."
                             className={styles.sessionInput}
                         />
                         <Button onClick={handleResetConversation} className={styles.resetButton}>
@@ -296,8 +280,8 @@ export default function Chat({ style }: { style: React.CSSProperties }) {
                 {messages.length === 0 && !isLoading && (
                     <div className={styles.welcomeMessage}>
                         <div className={styles.welcomeIcon}>🤖</div>
-                        <h2>Welcome to AI Agent Hub!</h2>
-                        <p>Choose an agent from the dropdown above and start chatting!</p>
+                        <h2>Welcome to Agent Framework demo!</h2>
+                        <p>Start chatting with me!</p>
                     </div>
                 )}
                 {messages.map((message, index) => (

@@ -577,6 +577,52 @@
   }
 }
 
+/* Agent Selector */
+.agentSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agentLabel {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.agentDropdown {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+  outline: none;
+  min-width: 150px;
+}
+
+.agentDropdown:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.agentDropdown:focus {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.agentDropdown option {
+  background: #667eea;
+  color: white;
+  padding: 8px;
+}
+
 /* Theme Selector */
 .themeSelector {
   display: flex;

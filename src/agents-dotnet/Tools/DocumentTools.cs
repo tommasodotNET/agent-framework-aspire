@@ -4,8 +4,6 @@ using System.Text.Json;
 using Microsoft.Extensions.AI;
 using Agents.Dotnet.Services;
 using Agents.Dotnet.Models.Tools;
-using Agents.Dotnet.Models.UI;
-using SharedModels;
 
 namespace Agents.Dotnet.Tools;
 
