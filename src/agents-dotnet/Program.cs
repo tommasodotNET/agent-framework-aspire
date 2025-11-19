@@ -1,17 +1,13 @@
 using Azure.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.AI;
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting.A2A;
 using Microsoft.Agents.AI.Hosting;
 using Agents.Dotnet.Services;
 using Agents.Dotnet.Tools;
-using System.Text.Json;
 using A2A;
 using ModelContextProtocol.Client;
-using Microsoft.Agents.AI.Hosting.AGUI.AspNetCore;
 using SharedServices;
-using SharedModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,45 +98,6 @@ var app = builder.Build();
 
 // Enable CORS
 app.UseCors();
-
-app.MapPost("/agent/chat/stream", async ([FromKeyedServices("document-management-agent")] AIAgent agent,
-    [FromKeyedServices("document-management-agent")] AgentThreadStore threadStore,
-    [FromBody] AIChatRequest request,
-    [FromServices] ILogger<Program> logger,
-    HttpResponse response) =>
-{
-    var conversationId = request.SessionState ?? Guid.NewGuid().ToString();
-
-    if (request.Messages.Count == 0)
-    {
-        AIChatCompletionDelta delta = new(new AIChatMessageDelta() { Content = $"Hi, I'm {agent.Name}" })
-        {
-            SessionState = conversationId
-        };
-
-        await response.WriteAsync($"{JsonSerializer.Serialize(delta)}\r\n");
-        await response.Body.FlushAsync();
-    }
-    else
-    {
-        var message = request.Messages.LastOrDefault();
-
-        var thread = await threadStore.GetThreadAsync(agent, conversationId);
-
-        var chatMessage = new ChatMessage(ChatRole.User, message.Content);
-
-        //before invoking the agent MAF automatically calls the GetMessagesAsync of our CustomMessageStore
-        await foreach (var update in agent.RunStreamingAsync(chatMessage, thread))
-        {
-            await response.WriteAsync($"{JsonSerializer.Serialize(new AIChatCompletionDelta(new AIChatMessageDelta() { Content = update.Text }))}\r\n");
-            await response.Body.FlushAsync();
-        }
-
-        await threadStore.SaveThreadAsync(agent, conversationId, thread);
-    }
-
-    return;
-});
 
 app.MapDefaultEndpoints();
 

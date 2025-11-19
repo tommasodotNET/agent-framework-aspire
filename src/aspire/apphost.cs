@@ -126,17 +126,6 @@ builder.AddYarp("yarp")
         yarp.AddRoute("/agenta2a/groupchat/{**catch-all}", dotnetGroupChat)
             .WithTransformPathRemovePrefix("/agenta2a/groupchat")
             .WithTransformPathPrefix("/agenta2a");
-        
-        // Keep legacy custom API endpoints for backward compatibility (to be removed later)
-        yarp.AddRoute("/agent/dotnet/{**catch-all}", dotnetAgent)
-            .WithTransformPathRemovePrefix("/agent/dotnet")
-            .WithTransformPathPrefix("/agent");
-        yarp.AddRoute("/agent/python/{**catch-all}", pythonAgent)
-            .WithTransformPathRemovePrefix("/agent/python")
-            .WithTransformPathPrefix("/agent");
-        yarp.AddRoute("/agent/groupchat/{**catch-all}", dotnetGroupChat)
-            .WithTransformPathRemovePrefix("/agent/groupchat")
-            .WithTransformPathPrefix("/agent");
     })
     .PublishWithStaticFiles(frontend);
 

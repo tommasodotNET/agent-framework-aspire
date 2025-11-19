@@ -3,11 +3,8 @@ using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
 using Microsoft.Agents.AI.Hosting.A2A;
 using Microsoft.Agents.AI.Workflows;
-using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
 using Microsoft.Extensions.AI;
 using SharedServices;
-using SharedModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -95,44 +92,6 @@ app.MapGet("/agent/chat", async ([FromKeyedServices("group-chat")] AIAgent group
     var prompt = "According to our procurement policy, what vendors are we required to use for office supplies, and what has been our spending pattern with those vendors over the past 6 months?";
     var groupChatResponse = await groupChatAgent.RunAsync(prompt);
     return Results.Ok(groupChatResponse);
-});
-
-app.MapPost("/agent/chat/stream", async ([FromKeyedServices("group-chat")] AIAgent agent,
-    [FromKeyedServices("group-chat")] AgentThreadStore threadStore,
-    [FromBody] AIChatRequest request,
-    [FromServices] ILogger<Program> logger,
-    HttpResponse response) =>
-{  
-    var conversationId = request.SessionState ?? Guid.NewGuid().ToString();
-
-    if (request.Messages.Count == 0)
-    {
-        AIChatCompletionDelta delta = new(new AIChatMessageDelta() { Content = $"Hi, I'm {agent.Name}" })
-        {
-            SessionState = conversationId
-        };
-
-        await response.WriteAsync($"{JsonSerializer.Serialize(delta)}\r\n");
-        await response.Body.FlushAsync();
-    }
-    else
-    {
-        var message = request.Messages.LastOrDefault();
-
-        var thread = await threadStore.GetThreadAsync(agent, conversationId);
-
-        var chatMessage = new ChatMessage(ChatRole.User, message.Content);
-
-        await foreach (var update in agent.RunStreamingAsync(chatMessage, thread))
-        {
-            await response.WriteAsync($"{JsonSerializer.Serialize(new AIChatCompletionDelta(new AIChatMessageDelta() { Content = update.Text }))}\r\n");
-            await response.Body.FlushAsync();
-        }
-
-        await threadStore.SaveThreadAsync(agent, conversationId, thread);
-    }
-
-    return;
 });
 
 app.MapA2A("group-chat", "/agenta2a", new AgentCard

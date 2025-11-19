@@ -20,7 +20,6 @@
   <ItemGroup>
     <ProjectReference Include="..\service-defaults\ServiceDefaults.csproj" />
     <ProjectReference Include="..\shared-services\SharedServices.csproj" />
-    <ProjectReference Include="..\shared-models\SharedModels.csproj" />
   </ItemGroup>
 
 </Project>
