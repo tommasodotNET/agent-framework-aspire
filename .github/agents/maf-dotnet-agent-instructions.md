@@ -9,21 +9,11 @@ You are an expert in Microsoft Agent Framework and .NET development, specializin
 
 In this repository, agents are implemented using Microsoft Agent Framework with .NET 10. Each agent can be exposed in multiple ways:
 
--   **A2A (Agent-to-Agent)** communication for inter-agent scenarios
--   **Custom API endpoints** for direct frontend integration
+-   **A2A (Agent-to-Agent)** communication - The primary pattern for both inter-agent communication and frontend integration
+-   **Custom API endpoints** for direct frontend integration (legacy pattern, consider A2A instead)
 -   **OpenAI Responses and Conversations** (OpenAI-compatible endpoints)
 
-## Repo Structure
-
-The repository contains several agent implementations in the `src` directory:
-
--   `src/agents-dotnet`: A .NET agent with document management capabilities, exposed via A2A and custom API
--   `src/groupchat-dotnet`: A multi-agent orchestration example using workflows and A2A communication
--   `src/agents-python`: A Python agent for comparison
--   `src/shared-services`: Shared Cosmos DB services for agent thread storage and conversation management
--   `src/shared-models`: Shared UI models for conversational interfaces
--   `src/service-defaults`: Common Aspire service defaults
--   `test/agents-dotnet-tests`: Test project demonstrating agent testing patterns
+**Recommended Architecture**: Use A2A protocol end-to-end for both client-to-agent and agent-to-agent communication. This provides standardized message formats, streaming support, and contextId-based conversation management.
 
 ## Agent Project Structure
 
@@ -128,9 +118,9 @@ using SharedModels;                                  // Shared UI models
 
 ## Agent Implementation Patterns
 
-### Pattern 1: A2A Agent with Custom API
+### Pattern 1: A2A-Only Agent (Recommended)
 
-This is the primary pattern used in the repository. See `src/agents-dotnet/Program.cs` for a complete reference implementation.
+This is the recommended pattern for new agents. Agents expose only A2A endpoints, which can be consumed by both frontend clients (using the A2A JavaScript SDK) and other agents. See `src/restaurant-agent/Program.cs` and `src/orchestrator-agent/Program.cs` for reference implementations.
 
 #### Configure Services and Chat Client
 
@@ -231,10 +221,27 @@ app.MapPost("/agent/chat/stream", async (
 #### Add A2A Endpoint
 
 ```csharp
+var app = builder.Build();
+
+// Configure CORS for frontend access
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Enable CORS
+app.UseCors();
+
+// Map A2A endpoint
 app.MapA2A("your-agent-name", "/agenta2a", new AgentCard
 {
     Name = "your-agent-name",
-    Url = "http://localhost:5196/agenta2a",
+    Url = app.Configuration["ASPNETCORE_URLS"]?.Split(';')[0] + "/agenta2a" ?? "http://localhost:5196/agenta2a",
     Description = "Your agent description",
     Version = "1.0",
     DefaultInputModes = ["text"],
@@ -258,7 +265,99 @@ app.MapDefaultEndpoints();
 app.Run();
 ```
 
-### Pattern 2: OpenAI-Compatible Endpoints
+**Frontend Integration**: Use the `@a2a-js/sdk` package in your frontend:
+
+```typescript
+import { A2AClient } from '@a2a-js/sdk/client';
+import type { MessageSendParams, Message } from '@a2a-js/sdk';
+import { v4 as uuidv4 } from 'uuid';
+
+// Initialize client from agent card URL
+const client = await A2AClient.fromCardUrl('/agenta2a/v1/card');
+
+// Send a message with streaming
+const params: MessageSendParams = {
+    message: {
+        messageId: uuidv4(),
+        role: 'user',
+        kind: 'message',
+        parts: [{ kind: 'text', text: 'Hello!' }],
+        contextId: conversationId, // Maintain conversation context
+    },
+};
+
+// Stream responses
+for await (const event of client.sendMessageStream(params)) {
+    if (event.kind === 'message') {
+        const message = event as Message;
+        // Handle message parts
+        for (const part of message.parts) {
+            if (part.kind === 'text') {
+                console.log(part.text);
+            }
+        }
+    }
+}
+```
+
+### Pattern 2: A2A Agent with Custom API (Legacy)
+
+This pattern combines A2A for agent-to-agent communication with custom endpoints for frontend integration. **Consider using Pattern 1 (A2A-only) for new implementations**. See `src/agents-dotnet/Program.cs` for a reference implementation.
+
+#### Add Custom API Endpoint
+
+```csharp
+using SharedModels; // Import shared UI models
+
+var app = builder.Build();
+
+app.MapPost("/agent/chat/stream", async (
+    [FromKeyedServices("your-agent-name")] AIAgent agent,
+    [FromKeyedServices("your-agent-name")] AgentThreadStore threadStore,
+    [FromBody] AIChatRequest request,
+    [FromServices] ILogger<Program> logger,
+    HttpResponse response) =>
+{
+    var conversationId = request.SessionState ?? Guid.NewGuid().ToString();
+
+    if (request.Messages.Count == 0)
+    {
+        // Initial greeting
+        AIChatCompletionDelta delta = new(new AIChatMessageDelta() 
+            { Content = $"Hi, I'm {agent.Name}" })
+        {
+            SessionState = conversationId
+        };
+
+        await response.WriteAsync($"{JsonSerializer.Serialize(delta)}\r\n");
+        await response.Body.FlushAsync();
+    }
+    else
+    {
+        var message = request.Messages.LastOrDefault();
+        var thread = await threadStore.GetThreadAsync(agent, conversationId);
+        var chatMessage = new ChatMessage(ChatRole.User, message.Content);
+
+        // Stream responses
+        await foreach (var update in agent.RunStreamingAsync(chatMessage, thread))
+        {
+            await response.WriteAsync($"{JsonSerializer.Serialize(
+                new AIChatCompletionDelta(new AIChatMessageDelta() 
+                    { Content = update.Text }))}\r\n");
+            await response.Body.FlushAsync();
+        }
+
+        await threadStore.SaveThreadAsync(agent, conversationId, thread);
+    }
+
+    return;
+});
+
+app.MapDefaultEndpoints();
+app.Run();
+```
+
+### Pattern 3: OpenAI-Compatible Endpoints
 
 For OpenAI-compatible API endpoints (based on the Microsoft Agent Framework reference template), add these endpoints to support standard OpenAI client libraries.
 
@@ -298,7 +397,7 @@ if (builder.Environment.IsDevelopment())
 
 The DevUI will be available at `/devui` and provides a web interface for testing your agent.
 
-### Pattern 3: Multi-Agent with A2A Communication
+### Pattern 4: Multi-Agent with A2A Communication
 
 For orchestrating multiple agents via A2A, see `src/groupchat-dotnet/Program.cs` as a reference. This pattern allows you to:
 
@@ -343,7 +442,7 @@ builder.AddAIAgent("group-chat", (sp, key) =>
 }).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 ```
 
-### Pattern 4: Sequential Workflow
+### Pattern 5: Sequential Workflow
 
 For sequential agent workflows where one agent's output becomes another's input (from the Microsoft Agent Framework reference template):
 
@@ -487,23 +586,41 @@ await threadStore.SaveThreadAsync(agent, conversationId, thread);
 
 ## Complete Examples
 
-### Basic Agent with Tools
+### Basic A2A-Only Agent with Tools (Recommended)
 
 ```csharp
 using Microsoft.Agents.AI;
 using Microsoft.Agents.AI.Hosting;
+using Microsoft.Agents.AI.Hosting.A2A;
 using Microsoft.Extensions.AI;
+using Azure.Identity;
+using A2A;
+using SharedServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddAzureChatCompletionsClient(connectionName: "foundry")
+// Configure Azure chat client
+builder.AddAzureChatCompletionsClient(connectionName: "foundry",
+    configureSettings: settings =>
+    {
+        settings.TokenCredential = new DefaultAzureCredential();
+        settings.EnableSensitiveTelemetryData = true;
+    })
     .AddChatClient("gpt-4.1");
 
+// Register services
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<DocumentTools>();
 
+// Register Cosmos for conversation storage
+builder.AddKeyedAzureCosmosContainer("conversations",
+    configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
+builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
+builder.Services.AddSingleton<CosmosAgentThreadStore>();
+
+// Register the agent
 builder.AddAIAgent("doc-agent", (sp, key) =>
 {
     var chatClient = sp.GetRequiredService<IChatClient>();
@@ -514,63 +631,19 @@ builder.AddAIAgent("doc-agent", (sp, key) =>
         instructions: "You help users find and manage documents.",
         tools: tools
     );
-});
-
-var app = builder.Build();
-app.MapDefaultEndpoints();
-app.Run();
-```
-
-### Agent with All Patterns Combined
-
-```csharp
-using Microsoft.Agents.AI;
-using Microsoft.Agents.AI.Hosting;
-using Microsoft.Agents.AI.Hosting.A2A;
-using Microsoft.Extensions.AI;
-using A2A;
-
-var builder = WebApplication.CreateBuilder(args);
-
-builder.AddServiceDefaults();
-
-// Chat client
-builder.AddAzureChatCompletionsClient(connectionName: "foundry")
-    .AddChatClient("gpt-4.1");
-
-// Services
-builder.Services.AddSingleton<YourService>();
-builder.Services.AddSingleton<YourTools>();
-
-// OpenAI endpoints support
-builder.Services.AddOpenAIResponses();
-builder.Services.AddOpenAIConversations();
-
-// Thread store
-builder.AddKeyedAzureCosmosContainer("conversations");
-builder.Services.AddSingleton<CosmosAgentThreadStore>();
-
-// Agent
-builder.AddAIAgent("multi-pattern-agent", (sp, key) =>
-{
-    var chatClient = sp.GetRequiredService<IChatClient>();
-    var tools = sp.GetRequiredService<YourTools>().GetFunctions();
-
-    return chatClient.CreateAIAgent(
-        name: key,
-        instructions: "You are a helpful assistant.",
-        tools: tools
-    );
 }).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 
 var app = builder.Build();
 
-// A2A endpoint
-app.MapA2A("multi-pattern-agent", "/agenta2a", new AgentCard
+// Enable CORS
+app.UseCors();
+
+// Map A2A endpoint
+app.MapA2A("doc-agent", "/agenta2a", new AgentCard
 {
-    Name = "multi-pattern-agent",
-    Url = "http://localhost:5196/agenta2a",
-    Description = "Multi-pattern agent example",
+    Name = "doc-agent",
+    Url = app.Configuration["ASPNETCORE_URLS"]?.Split(';')[0] + "/agenta2a" ?? "http://localhost:5196/agenta2a",
+    Description = "A document management assistant",
     Version = "1.0",
     DefaultInputModes = ["text"],
     DefaultOutputModes = ["text"],
@@ -579,18 +652,128 @@ app.MapA2A("multi-pattern-agent", "/agenta2a", new AgentCard
         Streaming = true,
         PushNotifications = false
     },
-    Skills = []
+    Skills = [
+        new AgentSkill
+        {
+            Name = "Document Management",
+            Description = "Find and manage documents",
+            Examples = ["Find documents about project X", "List all PDFs"]
+        }
+    ]
 });
 
-// OpenAI-compatible endpoints
-app.MapOpenAIResponses();
-app.MapOpenAIConversations();
+app.MapDefaultEndpoints();
+app.Run();
+```
 
-// DevUI for development
-if (builder.Environment.IsDevelopment())
+### Orchestrator Agent with A2A Communication
+
+Example of an agent that orchestrates other agents via A2A:
+
+```csharp
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Hosting;
+using Microsoft.Agents.AI.Hosting.A2A;
+using Microsoft.Extensions.AI;
+using Azure.Identity;
+using A2A;
+using SharedServices;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.AddServiceDefaults();
+
+// Configure Azure chat client
+builder.AddAzureChatCompletionsClient(connectionName: "foundry",
+    configureSettings: settings =>
+    {
+        settings.TokenCredential = new DefaultAzureCredential();
+        settings.EnableSensitiveTelemetryData = true;
+    })
+    .AddChatClient("gpt-4.1");
+
+// Register Cosmos for conversation storage
+builder.AddKeyedAzureCosmosContainer("conversations",
+    configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
+builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
+builder.Services.AddSingleton<CosmosAgentThreadStore>();
+
+// Configure CORS
+builder.Services.AddCors(options =>
 {
-    app.MapDevUI();
-}
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+// Connect to a specialized agent via A2A
+var specializedAgentUrl = Environment.GetEnvironmentVariable("services__specialized-agent__https__0") 
+    ?? Environment.GetEnvironmentVariable("services__specialized-agent__http__0");
+var httpClient = new HttpClient()
+{
+    BaseAddress = new Uri(specializedAgentUrl!),
+    Timeout = TimeSpan.FromSeconds(60)
+};
+var cardResolver = new A2ACardResolver(
+    httpClient.BaseAddress!,
+    httpClient,
+    agentCardPath: "/agenta2a/v1/card"
+);
+
+var specializedAgent = cardResolver.GetAIAgentAsync().Result;
+
+// Register the orchestrator agent that uses other agents as tools
+builder.AddAIAgent("orchestrator-agent", (sp, key) =>
+{
+    var chatClient = sp.GetRequiredService<IChatClient>();
+
+    var agent = chatClient.CreateAIAgent(
+        instructions: @"You are a helpful orchestrator that coordinates multiple specialized agents.
+When users ask questions, determine which specialized agent to use and invoke them as tools.",
+        description: "An orchestrator that coordinates multiple specialized agents",
+        name: key,
+        tools: [
+            specializedAgent.AsAIFunction()
+        ]
+    );
+
+    return agent;
+}).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
+
+var app = builder.Build();
+
+// Enable CORS
+app.UseCors();
+
+// Map A2A endpoint for the orchestrator
+app.MapA2A("orchestrator-agent", "/agenta2a", new AgentCard
+{
+    Name = "orchestrator-agent",
+    Url = app.Configuration["ASPNETCORE_URLS"]?.Split(';')[0] + "/agenta2a" ??"http://localhost:5197/agenta2a",
+    Description = "An orchestrator that coordinates multiple specialized agents",
+    Version = "1.0",
+    DefaultInputModes = ["text"],
+    DefaultOutputModes = ["text"],
+    Capabilities = new AgentCapabilities
+    {
+        Streaming = true,
+        PushNotifications = false
+    },
+    Skills = [
+        new AgentSkill
+        {
+            Name = "Orchestration",
+            Description = "Coordinate multiple specialized agents to answer user queries",
+            Examples = [
+                "Help me find information",
+                "Can you assist with my request?"
+            ]
+        }
+    ]
+});
 
 app.MapDefaultEndpoints();
 app.Run();
@@ -632,19 +815,76 @@ app.Run();
 -   Never expose API keys in code
 -   Validate and sanitize user inputs
 -   Implement proper authorization for agent endpoints
+-   Configure CORS appropriately (restrictive for production, permissive for development)
 
 ### Testing
-\
+
 -   Test tool invocations with various inputs
 -   Verify streaming behavior
 -   Test conversation persistence
--   Use function filters to test tool selection without LLM costs (see `test/agents-dotnet-tests` for examples)
+-   Use function filters to test tool selection without LLM costs (see [Agents Dotnet Tests](https://github.com/tommasodotNET/agent-framework-aspire/tree/main/test/agents-dotnet-tests) for examples)
+
+## A2A Frontend Integration
+
+When consuming agents from a frontend application, use the official A2A JavaScript SDK:
+
+### Installation
+
+```bash
+npm install @a2a-js/sdk uuid
+npm install --save-dev @types/uuid
+```
+
+### Usage
+
+```typescript
+import { A2AClient } from '@a2a-js/sdk/client';
+import type { MessageSendParams, Message } from '@a2a-js/sdk';
+import { v4 as uuidv4 } from 'uuid';
+
+// Initialize client from agent card URL
+const client = await A2AClient.fromCardUrl('/agenta2a/v1/card');
+
+// Send a message with streaming
+const params: MessageSendParams = {
+    message: {
+        messageId: uuidv4(),
+        role: 'user',
+        kind: 'message',
+        parts: [{ kind: 'text', text: 'Hello!' }],
+        contextId: conversationId, // Maintain conversation context
+    },
+};
+
+// Stream responses
+for await (const event of client.sendMessageStream(params)) {
+    if (event.kind === 'message') {
+        const message = event as Message;
+        for (const part of message.parts) {
+            if (part.kind === 'text') {
+                console.log(part.text);
+            }
+        }
+    }
+}
+```
+
+### Key Concepts
+
+- **contextId**: Used to maintain conversation state across requests (similar to sessionState in custom APIs)
+- **messageId**: Unique identifier for each message (use `uuidv4()` to generate)
+- **Streaming**: Use `sendMessageStream()` for real-time responses, `sendMessage()` for blocking calls
+- **Message Parts**: Messages can contain multiple parts (text, images, etc.)
 
 ## Reference Resources
 
 -   [Microsoft Agent Framework GitHub](https://github.com/microsoft/agent-framework/) - Official MAF repository
+-   [A2A Protocol](https://a2a-protocol.org/) - Agent-to-Agent protocol specification
+-   [A2A JavaScript SDK](https://github.com/a2aproject/a2a-js) - Official A2A JavaScript SDK
 -   [.NET Extensions Templates](https://github.com/dotnet/extensions/tree/main/src/ProjectTemplates/Microsoft.Agents.AI.ProjectTemplates) - Official project templates
 -   [Aspire Documentation](https://learn.microsoft.com/dotnet/aspire/) - .NET Aspire documentation
--   `src/agents-dotnet` - Reference implementation with A2A and custom API
--   `src/groupchat-dotnet` - Multi-agent orchestration example
--   `test/agents-dotnet-tests` - Testing patterns and examples
+-   [Restaurant Agent](../../src/restaurant-agent/) - A2A-only agent implementation example
+-   [Orchestrator Agent](../../src/orchestrator-agent/) - A2A orchestration example
+-   [Agent Dotnet](https://github.com/tommasodotNET/agent-framework-aspire/tree/main/src/agents-dotnet) - Reference implementation with A2A and custom API
+-   [Groupchat Dotnet](https://github.com/tommasodotNET/agent-framework-aspire/tree/main/src/groupchat-dotnet) - Multi-agent orchestration example
+-   [Agents Dotnet Tests](https://github.com/tommasodotNET/agent-framework-aspire/tree/main/test/agents-dotnet-tests) - Testing patterns and examples
