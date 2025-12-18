@@ -1,13 +1,12 @@
-﻿#:sdk Aspire.AppHost.Sdk@13.0.1
-#:package Aspire.Hosting.AppHost@13.0.1
-#:package Aspire.Hosting.Azure.AIFoundry@13.0.1-preview.1.25575.3
-#:package Aspire.Hosting.Azure.CosmosDB@13.0.1
-#:package Aspire.Hosting.Azure.Search@13.0.1
-#:package Aspire.Hosting.DevTunnels@13.0.1-preview.1.25575.3
-#:package Aspire.Hosting.JavaScript@13.0.1
-#:package Aspire.Hosting.Python@13.0.1
-#:package Aspire.Hosting.Yarp@13.0.1
-#:package Aspire.Hosting.Azure.AppContainers@13.0.1
+﻿#:sdk Aspire.AppHost.Sdk@13.1.0
+#:package Aspire.Hosting.Azure.AIFoundry@13.1.0-preview.1.25616.3
+#:package Aspire.Hosting.Azure.CosmosDB@13.1.0
+#:package Aspire.Hosting.Azure.Search@13.1.0
+#:package Aspire.Hosting.DevTunnels@13.1.0
+#:package Aspire.Hosting.JavaScript@13.1.0
+#:package Aspire.Hosting.Python@13.1.0
+#:package Aspire.Hosting.Yarp@13.1.0
+#:package Aspire.Hosting.Azure.AppContainers@13.1.0
 
 #:project ../mcp-server-dotnet/McpServer.Dotnet.csproj
 #:project ../agents-dotnet/Agents.Dotnet.csproj
