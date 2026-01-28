@@ -15,7 +15,7 @@ builder.AddKeyedAzureCosmosContainer("conversations", configureClientOptions: (o
 
 // Register Cosmos Thread Store services
 builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
-builder.Services.AddSingleton<CosmosAgentThreadStore>();
+builder.Services.AddSingleton<CosmosAgentSessionStore>();
 
 // Configure CORS for A2A frontend access
 builder.Services.AddCors(options =>
@@ -64,7 +64,7 @@ builder.AddAIAgent("group-chat", (sp, key) =>
             .Build();
 
     return workflow.AsAgent(name: key);
-}).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
+}).WithSessionStore((sp, key) => sp.GetRequiredService<CosmosAgentSessionStore>());
 
 var app = builder.Build();
 

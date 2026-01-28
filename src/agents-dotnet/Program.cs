@@ -38,7 +38,7 @@ builder.Services.AddCors(options =>
 
 // Register Cosmos Thread Store services
 builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
-builder.Services.AddSingleton<CosmosAgentThreadStore>();
+builder.Services.AddSingleton<CosmosAgentSessionStore>();
 
 var mcpServerUrl = Environment.GetEnvironmentVariable("services__mcpserver__https__0") 
        ?? Environment.GetEnvironmentVariable("services__mcpserver__http__0")!;
@@ -64,7 +64,7 @@ builder.AddAIAgent("document-management-agent", (sp, key) =>
     var instrumentedChatClient = sp.GetRequiredService<IChatClient>();
     var documentTools = sp.GetRequiredService<DocumentTools>().GetFunctions();
 
-    var agent = instrumentedChatClient.CreateAIAgent(
+    var agent = instrumentedChatClient.AsAIAgent(
         instructions: @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
 
             Your capabilities include:
@@ -92,7 +92,7 @@ builder.AddAIAgent("document-management-agent", (sp, key) =>
     );
 
     return agent;
-}).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
+}).WithSessionStore((sp, key) => sp.GetRequiredService<CosmosAgentSessionStore>());
 
 var app = builder.Build();
 

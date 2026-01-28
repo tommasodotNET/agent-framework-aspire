@@ -23,24 +23,24 @@ namespace SharedServices;
 /// This allows multiple agents to maintain separate threads for the same conversation.
 /// </para>
 /// </remarks>
-public sealed class CosmosAgentThreadStore : AgentThreadStore
+public sealed class CosmosAgentSessionStore : AgentSessionStore
 {
     private readonly ICosmosThreadRepository _repository;
-    private readonly ILogger<CosmosAgentThreadStore> _logger;
+    private readonly ILogger<CosmosAgentSessionStore> _logger;
 
-    public CosmosAgentThreadStore(
+    public CosmosAgentSessionStore(
         ICosmosThreadRepository repository,
-        ILogger<CosmosAgentThreadStore> logger)
+        ILogger<CosmosAgentSessionStore> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <inheritdoc/>
-    public override async ValueTask SaveThreadAsync(
+    public override async ValueTask SaveSessionAsync(
         AIAgent agent,
         string conversationId,
-        AgentThread thread,
+        AgentSession session,
         CancellationToken cancellationToken = default)
     {
         if (agent == null)
@@ -53,22 +53,22 @@ public sealed class CosmosAgentThreadStore : AgentThreadStore
             throw new ArgumentException("Conversation ID cannot be null or empty", nameof(conversationId));
         }
 
-        if (thread == null)
+        if (session == null)
         {
-            throw new ArgumentNullException(nameof(thread));
+            throw new ArgumentNullException(nameof(session));
         }
 
         var key = GetKey(conversationId, agent.Id);
-        var serializedThread = thread.Serialize();
+        var serializedSession = session.Serialize();
 
-        _logger.LogDebug("Saving agent thread. AgentId: {AgentId}, ConversationId: {ConversationId}, Key: {Key}",
+        _logger.LogDebug("Saving agent session. AgentId: {AgentId}, ConversationId: {ConversationId}, Key: {Key}",
             agent.Id, conversationId, key);
 
-        await _repository.SaveThreadAsync(key, serializedThread, cancellationToken);
+        await _repository.SaveThreadAsync(key, serializedSession, cancellationToken);
     }
 
     /// <inheritdoc/>
-    public override async ValueTask<AgentThread> GetThreadAsync(
+    public override async ValueTask<AgentSession> GetSessionAsync(
         AIAgent agent,
         string conversationId,
         CancellationToken cancellationToken = default)
@@ -88,18 +88,18 @@ public sealed class CosmosAgentThreadStore : AgentThreadStore
         _logger.LogDebug("Retrieving agent thread. AgentId: {AgentId}, ConversationId: {ConversationId}, Key: {Key}",
             agent.Id, conversationId, key);
 
-        var serializedThread = await _repository.GetThreadAsync(key, cancellationToken);
+        var serializedSession = await _repository.GetThreadAsync(key, cancellationToken);
 
-        if (serializedThread == null)
+        if (serializedSession == null)
         {
-            _logger.LogInformation("No existing thread found, creating new thread. AgentId: {AgentId}, ConversationId: {ConversationId}",
+            _logger.LogInformation("No existing session found, creating new session. AgentId: {AgentId}, ConversationId: {ConversationId}",
                 agent.Id, conversationId);
-            return agent.GetNewThread();
+            return await agent.GetNewSessionAsync();
         }
 
-        _logger.LogInformation("Existing thread found, deserializing. AgentId: {AgentId}, ConversationId: {ConversationId}",
+        _logger.LogInformation("Existing session found, deserializing. AgentId: {AgentId}, ConversationId: {ConversationId}",
             agent.Id, conversationId);
-        return agent.DeserializeThread(serializedThread.Value);
+        return await agent.DeserializeSessionAsync(serializedSession.Value);
     }
 
     /// <summary>

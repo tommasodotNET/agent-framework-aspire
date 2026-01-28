@@ -51,13 +51,13 @@ Add the required NuGet packages to your `.csproj` file:
 
   <ItemGroup>
     <!-- Core Agent Framework packages -->
-    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.251204.1" />
-    <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.0.0-preview.251204.1" />
-    <PackageReference Include="Microsoft.Agents.AI.Hosting" Version="1.0.0-preview.251204.1" />
-    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251204.1" />
+    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.260127.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Abstractions" Version="1.0.0-preview.260127.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting" Version="1.0.0-preview.260127.1" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.260127.1" />
     
     <!-- A2A Support -->
-    <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="1.0.0-preview.251204.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.A2A.AspNetCore" Version="1.0.0-preview.260127.1" />
     
     <!-- Optional: OpenAI-compatible endpoints -->
     <PackageReference Include="Microsoft.Agents.AI.Hosting.OpenAI" Version="1.0.0-preview.*" />
@@ -66,7 +66,7 @@ Add the required NuGet packages to your `.csproj` file:
     <PackageReference Include="Microsoft.Agents.AI.DevUI" Version="1.0.0-preview.*" />
     
     <!-- Optional: Workflows for multi-agent scenarios -->
-    <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-preview.251204.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Workflows" Version="1.0.0-preview.260127.1" />
     
     <!-- Azure and Aspire integrations -->
     <PackageReference Include="Aspire.Azure.AI.Inference" Version="13.0.0-preview.1.25560.3" />
