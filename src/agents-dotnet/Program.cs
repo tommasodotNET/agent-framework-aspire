@@ -6,8 +6,11 @@ using Microsoft.Agents.AI.Hosting;
 using Agents.Dotnet.Services;
 using Agents.Dotnet.Tools;
 using A2A;
+using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Client;
 using SharedServices;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,9 +66,13 @@ builder.AddAIAgent("document-management-agent", (sp, key) =>
 {
     var instrumentedChatClient = sp.GetRequiredService<IChatClient>();
     var documentTools = sp.GetRequiredService<DocumentTools>().GetFunctions();
+    var chatHistoryContainer = sp.GetRequiredKeyedService<Container>("conversations");
 
-    var agent = instrumentedChatClient.AsAIAgent(
-        instructions: @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
+    var agent = instrumentedChatClient.AsAIAgent(new ChatClientAgentOptions
+    {
+        Name = key,
+        ChatOptions = new() {
+            Instructions = @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
 
             Your capabilities include:
             - Searching and retrieving company documents, policies, and procedures
@@ -85,11 +92,48 @@ builder.AddAIAgent("document-management-agent", (sp, key) =>
             - Compliance rules and requirements
             - Document version management
             - Contract and legal document information",
-        description: "A friendly AI assistant",
-        name: key,
-        tools: [.. documentTools,
-                ..mcpTools.Cast<AITool>()]
-    );
+            Tools = [.. documentTools, ..mcpTools.Cast<AITool>()]
+        } ,
+        ChatHistoryProviderFactory = (ctx, ct) => new ValueTask<ChatHistoryProvider>(
+            // Create a new chat history provider for this agent that stores the messages in Cosmos DB.
+            // Each session must get its own copy of the CosmosChatHistoryProvider, since the provider
+            // also contains the conversation ID that the session is stored under.
+            ctx.SerializedState.ValueKind is JsonValueKind.Object
+                ? CosmosChatHistoryProvider.CreateFromSerializedState(
+                    chatHistoryContainer,
+                    ctx.SerializedState,
+                    ctx.JsonSerializerOptions)
+                : new CosmosChatHistoryProvider(
+                    chatHistoryContainer,
+                    Guid.NewGuid().ToString("N")))
+    });
+
+    // var agent = instrumentedChatClient.AsAIAgent(
+    //     instructions: @"You are a specialized Document Management and Policy Compliance Assistant. Your role is to help users find company policies, procedures, compliance requirements, and manage document-related tasks.
+
+    //         Your capabilities include:
+    //         - Searching and retrieving company documents, policies, and procedures
+    //         - Extracting and analyzing content from PDF, Word, and PowerPoint documents
+    //         - Looking up specific policies by category (HR, Safety, Finance, IT, etc.)
+    //         - Checking compliance requirements for various operations and spending levels
+    //         - Providing document version information and management
+    //         - Indexing and organizing documents from various sources
+
+    //         When users ask about policies, always provide specific requirements, procedures, and any exceptions that apply. For compliance questions, clearly explain what approvals are needed and any additional requirements. Be helpful and thorough in your responses while maintaining accuracy based on the available document data.
+
+    //         Sample areas you can help with:
+    //         - Remote work policies and procedures
+    //         - Safety requirements and procedures
+    //         - Purchase authorization and approval processes
+    //         - HR policies and employee handbook information
+    //         - Compliance rules and requirements
+    //         - Document version management
+    //         - Contract and legal document information",
+    //     description: "A friendly AI assistant",
+    //     name: key,
+    //     tools: [.. documentTools,
+    //             ..mcpTools.Cast<AITool>()]
+    // );
 
     return agent;
 }).WithSessionStore((sp, key) => sp.GetRequiredService<CosmosAgentSessionStore>());
