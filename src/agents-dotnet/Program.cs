@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Client;
 using SharedServices;
 using System.Text.Json;
+using Azure.AI.Inference;
 
 var builder = WebApplication.CreateBuilder(args);
 

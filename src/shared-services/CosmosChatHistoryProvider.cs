@@ -129,7 +129,7 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
     }
 
     /// <inheritdoc />
-    public override async ValueTask<IEnumerable<ChatMessage>> InvokingAsync(
+    protected override async ValueTask<IEnumerable<ChatMessage>> InvokingCoreAsync(
         InvokingContext context,
         CancellationToken cancellationToken = default)
     {
@@ -186,7 +186,7 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
     }
 
     /// <inheritdoc />
-    public override async ValueTask InvokedAsync(
+    protected override async ValueTask InvokedCoreAsync(
         InvokedContext context,
         CancellationToken cancellationToken = default)
     {
@@ -199,9 +199,8 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
         }
 
         ObjectDisposedException.ThrowIf(_disposed, this);
-
         var messageList = context.RequestMessages
-            .Concat(context.AIContextProviderMessages ?? [])
+            .Concat(context.RequestMessages ?? [])
             .Concat(context.ResponseMessages ?? [])
             .ToList();
 
